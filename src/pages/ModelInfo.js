@@ -27,6 +27,13 @@ function ModelInfo() {
     setLoading(true);
 
     try {
+      // Validate age if provided
+      if (modelData.age && (isNaN(modelData.age) || parseInt(modelData.age) < 18)) {
+        alert('Age must be 18 or older, or leave it empty.');
+        setLoading(false);
+        return;
+      }
+
       // Create model in Supabase
       const model = await createModel(modelData);
 
@@ -70,13 +77,14 @@ function ModelInfo() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="age">Age</label>
+              <label htmlFor="age">Age (optional, must be 18+)</label>
               <input
                 type="number"
                 id="age"
                 name="age"
                 value={modelData.age}
                 onChange={handleChange}
+                min="18"
                 placeholder="e.g., 25"
               />
             </div>

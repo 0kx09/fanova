@@ -10,17 +10,28 @@ export const createModel = async (modelData) => {
     throw new Error('User not authenticated');
   }
 
+  // Parse and validate age
+  let ageValue = null;
+  if (modelData.age && modelData.age !== '') {
+    const parsedAge = parseInt(modelData.age);
+    if (!isNaN(parsedAge) && parsedAge >= 18) {
+      ageValue = parsedAge;
+    } else if (!isNaN(parsedAge) && parsedAge < 18) {
+      throw new Error('Age must be 18 or older');
+    }
+  }
+
   const { data, error } = await supabase
     .from('models')
     .insert([
       {
         user_id: user.id,
         name: modelData.name,
-        age: modelData.age ? parseInt(modelData.age) : null,
+        age: ageValue,
         height: modelData.height ? parseFloat(modelData.height) : null,
         weight: modelData.weight ? parseFloat(modelData.weight) : null,
-        nationality: modelData.nationality,
-        occupation: modelData.occupation,
+        nationality: modelData.nationality || null,
+        occupation: modelData.occupation || null,
         generation_method: 'describe' // default for now
       }
     ])
