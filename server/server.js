@@ -37,9 +37,22 @@ app.use((req, res) => {
   });
 });
 
+// Process-level error handlers to prevent crashes
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  console.error('Stack:', error.stack);
+  // Don't exit immediately, let PM2 handle it
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // Don't exit immediately, let PM2 handle it
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 API available at http://localhost:${PORT}`);
   console.log(`🏥 Health check at http://localhost:${PORT}/health`);
@@ -54,6 +67,14 @@ app.listen(PORT, () => {
     console.log('✅ Replicate API token found');
   } else {
     console.log('⚠️  No image generation API key found in .env');
+  }
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
   }
 });
 

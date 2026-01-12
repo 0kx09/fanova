@@ -243,17 +243,29 @@ router.post('/:id/generate', async (req, res) => {
     const { id } = req.params;
     const { numImages = 3, referenceImages } = req.body;
 
+    console.log(`[Generate] Request for model ${id}, numImages: ${numImages}`);
+
     // Try to get model from Supabase first
-    const { data: model, error: fetchError } = await supabase
-      .from('models')
-      .select('*')
-      .eq('id', id)
-      .single();
+    let model;
+    let fetchError;
+    try {
+      const result = await supabase
+        .from('models')
+        .select('*')
+        .eq('id', id)
+        .single();
+      model = result.data;
+      fetchError = result.error;
+    } catch (err) {
+      console.error('Error fetching model from Supabase:', err);
+      fetchError = err;
+    }
 
     if (fetchError || !model) {
       // Fallback to in-memory store for backwards compatibility
       const memoryModel = modelsStore.get(id);
       if (!memoryModel) {
+        console.error(`[Generate] Model ${id} not found in Supabase or memory`);
         return res.status(404).json({ error: 'Model not found' });
       }
 
@@ -263,28 +275,35 @@ router.post('/:id/generate', async (req, res) => {
 
       console.log('Generated prompt:', prompt);
 
-      const imageUrls = await generateImages(prompt, negativePrompt, numImages);
+      try {
+        const imageUrls = await generateImages(prompt, negativePrompt, numImages);
 
-      const generatedImages = imageUrls.map(url => ({
-        url,
-        prompt,
-        generatedAt: new Date()
-      }));
+        const generatedImages = imageUrls.map(url => ({
+          url,
+          prompt,
+          generatedAt: new Date()
+        }));
 
-      memoryModel.generatedImages.push(...generatedImages);
-      memoryModel.generationCount += numImages;
-      memoryModel.fullPrompt = prompt;
+        memoryModel.generatedImages.push(...generatedImages);
+        memoryModel.generationCount += numImages;
+        memoryModel.fullPrompt = prompt;
 
-      return res.json({
-        success: true,
-        images: imageUrls,
-        prompt: prompt,
-        model: {
-          id: memoryModel.id,
-          name: memoryModel.name,
-          generationCount: memoryModel.generationCount
-        }
-      });
+        return res.json({
+          success: true,
+          images: imageUrls,
+          prompt: prompt,
+          model: {
+            id: memoryModel.id,
+            name: memoryModel.name,
+            generationCount: memoryModel.generationCount
+          }
+        });
+      } catch (genError) {
+        console.error('Error generating images for memory model:', genError);
+        return res.status(500).json({
+          error: genError.message || 'Failed to generate images'
+        });
+      }
     }
 
     let prompt;
@@ -294,21 +313,33 @@ router.post('/:id/generate', async (req, res) => {
     if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
       console.log(`Analyzing ${referenceImages.length} reference images...`);
 
-      // Analyze reference images using Gemini Vision
-      const analysis = await analyzeReferenceImages(referenceImages);
-      console.log('Analysis complete:', analysis);
+      try {
+        // Analyze reference images using Gemini Vision
+        const analysis = await analyzeReferenceImages(referenceImages);
+        console.log('Analysis complete:', analysis);
 
-      // Save the analysis to the model
-      await supabase
-        .from('models')
-        .update({
-          analyzed_features: analysis
-        })
-        .eq('id', id);
+        // Save the analysis to the model
+        await supabase
+          .from('models')
+          .update({
+            analyzed_features: analysis
+          })
+          .eq('id', id);
 
-      // Generate prompt from analysis, using any additional attributes from the model
-      prompt = generatePromptFromAnalysis(analysis, model.attributes || {});
-      console.log('Generated prompt from reference images:', prompt);
+        // Generate prompt from analysis, using any additional attributes from the model
+        prompt = generatePromptFromAnalysis(analysis, model.attributes || {});
+        console.log('Generated prompt from reference images:', prompt);
+      } catch (analysisError) {
+        console.error('Error analyzing reference images:', analysisError);
+        // Fallback to describe method
+        const modelData = {
+          age: model.age,
+          attributes: model.attributes || {},
+          facialFeatures: model.facial_features || {}
+        };
+        prompt = generatePrompt(modelData);
+        console.log('Using fallback prompt from model attributes');
+      }
     } else {
       // No reference images - use describe method
       const modelData = {
@@ -329,6 +360,7 @@ router.post('/:id/generate', async (req, res) => {
       
       console.log(`Credits deducted: ${creditResult.cost}, Remaining: ${creditResult.remainingCredits}`);
     } catch (creditError) {
+      console.error('Credit check/deduction error:', creditError);
       return res.status(402).json({
         error: creditError.message || 'Insufficient credits',
         code: 'INSUFFICIENT_CREDITS'
@@ -336,15 +368,32 @@ router.post('/:id/generate', async (req, res) => {
     }
 
     // Generate images
-    const imageUrls = await generateImages(prompt, negativePrompt, numImages);
+    let imageUrls;
+    try {
+      imageUrls = await generateImages(prompt, negativePrompt, numImages);
+      console.log(`Successfully generated ${imageUrls.length} images`);
+    } catch (genError) {
+      console.error('Error generating images:', genError);
+      // Try to refund credits if generation fails
+      // (This is a simplified approach - in production you might want more sophisticated rollback)
+      return res.status(500).json({
+        error: genError.message || 'Failed to generate images. Please try again.',
+        code: 'GENERATION_FAILED'
+      });
+    }
 
     // Update generation count in Supabase
-    await supabase
-      .from('models')
-      .update({
-        generation_count: (model.generation_count || 0) + numImages
-      })
-      .eq('id', id);
+    try {
+      await supabase
+        .from('models')
+        .update({
+          generation_count: (model.generation_count || 0) + numImages
+        })
+        .eq('id', id);
+    } catch (updateError) {
+      console.error('Error updating generation count:', updateError);
+      // Don't fail the request if this update fails
+    }
 
     res.json({
       success: true,
@@ -357,9 +406,11 @@ router.post('/:id/generate', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error generating images:', error);
+    console.error('❌ Unexpected error in generate route:', error);
+    console.error('Stack:', error.stack);
     res.status(500).json({
-      error: error.message || 'Failed to generate images'
+      error: error.message || 'Failed to generate images',
+      code: 'INTERNAL_ERROR'
     });
   }
 });

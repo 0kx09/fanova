@@ -16,6 +16,9 @@ module.exports = {
       merge_logs: true,
       autorestart: true,
       max_memory_restart: '500M',
+      min_uptime: '10s',
+      max_restarts: 10,
+      restart_delay: 4000,
       watch: false,
       ignore_watch: ['node_modules', 'logs']
     }
