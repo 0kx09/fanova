@@ -1,0 +1,99 @@
+/* Industrial Minimalist Navigation - Matches Dashboard & Landing */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+.top-navigation {
+  background: #18181B;
+  border-bottom: 1px solid #27272A;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.nav-brand:hover {
+  opacity: 0.8;
+}
+
+.brand-icon {
+  font-size: 24px;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #FAFAFA;
+  letter-spacing: -0.5px;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.nav-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  border: none;
+  letter-spacing: -0.2px;
+}
+
+.dashboard-btn {
+  background: transparent;
+  color: #FAFAFA;
+  border: 1px solid #27272A;
+}
+
+.dashboard-btn:hover {
+  background: #1F1F23;
+  border-color: #3F3F46;
+}
+
+.create-btn {
+  background: #2563EB;
+  color: #ffffff;
+}
+
+.create-btn:hover {
+  background: #1D4ED8;
+}
+
+.create-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    padding: 0 16px;
+  }
+
+  .brand-name {
+    font-size: 18px;
+  }
+
+  .nav-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}

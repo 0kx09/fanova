@@ -1,0 +1,23 @@
+module.exports = {
+  apps: [
+    {
+      name: 'fanova-backend',
+      cwd: '/var/www/fanova/server',
+      script: 'server.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 5000
+      },
+      error_file: '/var/log/fanova/backend-error.log',
+      out_file: '/var/log/fanova/backend-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      autorestart: true,
+      max_memory_restart: '500M',
+      watch: false,
+      ignore_watch: ['node_modules', 'logs']
+    }
+  ]
+};

@@ -1,0 +1,168 @@
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Generate a simple user ID (in production, use proper auth)
+const getUserId = () => {
+  let userId = localStorage.getItem('userId');
+  if (!userId) {
+    userId = 'user_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('userId', userId);
+  }
+  return userId;
+};
+
+/**
+ * Create a new model profile
+ */
+export const createModel = async (modelInfo) => {
+  const response = await fetch(`${API_BASE_URL}/models`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      ...modelInfo,
+      userId: getUserId()
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create model');
+  }
+
+  return response.json();
+};
+
+/**
+ * Update model attributes
+ */
+export const updateModelAttributes = async (modelId, attributes) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}/attributes`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ attributes }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update attributes');
+  }
+
+  return response.json();
+};
+
+/**
+ * Update model facial features
+ */
+export const updateModelFacialFeatures = async (modelId, facialFeatures) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}/facial-features`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ facialFeatures }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update facial features');
+  }
+
+  return response.json();
+};
+
+/**
+ * Generate images for a model
+ */
+export const generateModelImages = async (modelId, numImages = 3, referenceImages = null) => {
+  const requestBody = { numImages };
+
+  // Add reference images if provided
+  if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+    requestBody.referenceImages = referenceImages;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate images');
+  }
+
+  return response.json();
+};
+
+/**
+ * Get a specific model
+ */
+export const getModel = async (modelId) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch model');
+  }
+
+  return response.json();
+};
+
+/**
+ * Get all models for the current user
+ */
+export const getUserModels = async () => {
+  const userId = getUserId();
+  const response = await fetch(`${API_BASE_URL}/models/user/${userId}`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch models');
+  }
+
+  return response.json();
+};
+
+/**
+ * Generate images for a model based on chat prompt
+ */
+export const generateModelImagesFromChat = async (modelId, userPrompt, numImages = 3, isNsfw = false, options = {}) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}/generate-chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ userPrompt, numImages, isNsfw, options }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Failed to generate images' }));
+    const errorObj = new Error(error.error || 'Failed to generate images');
+    errorObj.response = { status: response.status, data: error };
+    throw errorObj;
+  }
+
+  return response.json();
+};
+
+/**
+ * Delete a model
+ */
+export const deleteModel = async (modelId) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to delete model');
+  }
+
+  return response.json();
+};

@@ -1,0 +1,167 @@
+/* Industrial Minimalist Auth Pages - Matches Landing Page & Dashboard */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: #0E0E10;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.register-card {
+  background: #18181B;
+  padding: 48px;
+  border-radius: 8px;
+  border: 1px solid #27272A;
+  max-width: 420px;
+  width: 100%;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 600;
+  color: #FAFAFA;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+
+.logo::before {
+  content: '✨ ';
+  font-size: 24px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #A1A1AA;
+  margin-bottom: 40px;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+/* Error Banner */
+.error-banner {
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid #DC2626;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  color: #FCA5A5;
+  font-size: 13px;
+  text-align: center;
+  font-weight: 400;
+}
+
+/* Form Groups */
+.register-card .form-group {
+  margin-bottom: 20px;
+}
+
+.register-card .form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #FAFAFA;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0px;
+}
+
+.register-card .form-group input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #1F1F23;
+  border: 1px solid #27272A;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #FAFAFA;
+  transition: all 0.2s ease;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  outline: none;
+}
+
+.register-card .form-group input::placeholder {
+  color: #71717A;
+}
+
+.register-card .form-group input:focus {
+  outline: none;
+  border-color: #2563EB;
+  background: #18181B;
+}
+
+.register-card .form-group input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Primary Button */
+.register-card .btn-primary {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: #2563EB;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  letter-spacing: -0.2px;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.register-card .btn-primary:hover:not(:disabled) {
+  background: #1D4ED8;
+}
+
+.register-card .btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.register-card .btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Login Link */
+.login-link {
+  text-align: center;
+  margin-top: 24px;
+  color: #A1A1AA;
+  font-size: 13px;
+  padding-top: 24px;
+  border-top: 1px solid #27272A;
+}
+
+.login-link a {
+  color: #2563EB;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.login-link a:hover {
+  color: #1D4ED8;
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 16px;
+  }
+
+  .register-card {
+    padding: 32px 24px;
+  }
+
+  .logo {
+    font-size: 24px;
+  }
+}

@@ -1,0 +1,68 @@
+.model-attributes-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.model-attributes-card {
+  background: var(--bg-secondary);
+  padding: 48px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+}
+
+.model-attributes-card h2 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.attribute-section {
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.attribute-section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.attribute-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+}
+
+.model-attributes-card .form-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.model-attributes-card select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .model-attributes-card {
+    padding: 32px 24px;
+  }
+
+  .model-attributes-card h2 {
+    font-size: 28px;
+  }
+
+  .attribute-section h3 {
+    font-size: 16px;
+  }
+
+  .model-attributes-card .form-row {
+    grid-template-columns: 1fr;
+  }
+}

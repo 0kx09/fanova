@@ -1,0 +1,334 @@
+.subscription-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background: #0E0E10;
+  color: #E4E4E7;
+}
+
+.subscription-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.subscription-header h1 {
+  font-size: 36px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #F4F4F5;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.subscription-subtitle {
+  font-size: 18px;
+  color: #A1A1AA;
+  font-weight: 400;
+}
+
+.subscription-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #A1A1AA;
+  font-size: 18px;
+}
+
+.subscription-error,
+.subscription-success {
+  max-width: 600px;
+  margin: 0 auto 32px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.subscription-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #FCA5A5;
+}
+
+.subscription-success {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86EFAC;
+}
+
+.subscription-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.subscription-plan-card {
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 12px;
+  padding: 32px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.subscription-plan-card:hover {
+  border-color: #3F3F46;
+  transform: translateY(-2px);
+}
+
+.subscription-plan-card.current {
+  border-color: #2563EB;
+  border-width: 2px;
+}
+
+.subscription-plan-card.best-value {
+  border-color: #2563EB;
+}
+
+.best-value-badge,
+.current-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.best-value-badge {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.current-badge {
+  background: #27272A;
+  color: #A1A1AA;
+  border: 1px solid #3F3F46;
+}
+
+.plan-header {
+  margin-bottom: 24px;
+}
+
+.plan-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #F4F4F5;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.trial-badge-inline {
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  text-align: center;
+  display: inline-block;
+}
+
+.trial-text-inline {
+  font-size: 11px;
+  font-weight: 600;
+  color: #10B981;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.price-after-trial-inline {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.price-after-trial-inline span {
+  font-size: 12px;
+  color: #A1A1AA;
+  font-weight: 400;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price-amount {
+  font-size: 32px;
+  font-weight: 700;
+  color: #F4F4F5;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.price-period {
+  font-size: 16px;
+  color: #A1A1AA;
+  font-weight: 400;
+}
+
+.plan-credits {
+  text-align: center;
+  padding: 24px;
+  background: #1F1F23;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.credits-amount {
+  font-size: 48px;
+  font-weight: 700;
+  color: #2563EB;
+  font-family: 'Space Grotesk', sans-serif;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.credits-label {
+  font-size: 14px;
+  color: #A1A1AA;
+  margin-bottom: 4px;
+}
+
+.credits-per-pound {
+  font-size: 12px;
+  color: #71717A;
+  margin-top: 8px;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px 0;
+}
+
+.plan-features li {
+  padding: 12px 0;
+  border-bottom: 1px solid #27272A;
+  color: #E4E4E7;
+  font-size: 14px;
+  position: relative;
+  padding-left: 24px;
+}
+
+.plan-features li:last-child {
+  border-bottom: none;
+}
+
+.plan-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #2563EB;
+  font-weight: 600;
+}
+
+.plan-actions {
+  margin-top: auto;
+}
+
+.plan-button {
+  width: 100%;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.upgrade-button {
+  background: #2563EB;
+  color: #FFFFFF;
+}
+
+.upgrade-button:hover:not(:disabled) {
+  background: #1D4ED8;
+}
+
+.downgrade-button {
+  background: #27272A;
+  color: #E4E4E7;
+  border: 1px solid #3F3F46;
+}
+
+.downgrade-button:hover:not(:disabled) {
+  background: #3F3F46;
+}
+
+.current-button {
+  background: #1F1F23;
+  color: #71717A;
+  cursor: not-allowed;
+}
+
+.plan-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.subscription-info {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #18181B;
+  border: 1px solid #27272A;
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.subscription-info h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #F4F4F5;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.subscription-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.subscription-info li {
+  padding: 12px 0;
+  border-bottom: 1px solid #27272A;
+  color: #E4E4E7;
+  font-size: 14px;
+}
+
+.subscription-info li:last-child {
+  border-bottom: none;
+}
+
+.subscription-info li strong {
+  color: #F4F4F5;
+  font-weight: 600;
+}
+
+.subscription-note {
+  font-size: 14px;
+  color: #A1A1AA;
+  line-height: 1.6;
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid #27272A;
+}
+
+@media (max-width: 768px) {
+  .subscription-plans-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subscription-header h1 {
+    font-size: 28px;
+  }
+
+  .subscription-container {
+    padding: 24px 16px;
+  }
+}
