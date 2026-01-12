@@ -393,9 +393,6 @@ async function handleCheckoutCompleted(session) {
           console.log('Image marked as selected for model');
         }
       }
-    } else {
-      console.error('No subscription ID found in checkout session');
-    }
   } catch (error) {
     console.error('Error handling checkout completion:', error);
     console.error('Error stack:', error.stack);
