@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ModelPages.css';
 import { createModel } from '../services/supabaseService';
+import { generateModelName } from '../services/api';
 
 function ModelInfo() {
   const navigate = useNavigate();
@@ -14,12 +15,34 @@ function ModelInfo() {
     occupation: ''
   });
   const [loading, setLoading] = useState(false);
+  const [generatingName, setGeneratingName] = useState(false);
 
   const handleChange = (e) => {
     setModelData({
       ...modelData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleGenerateName = async () => {
+    setGeneratingName(true);
+    try {
+      const context = {
+        nationality: modelData.nationality || undefined,
+        occupation: modelData.occupation || undefined
+      };
+      
+      const generatedName = await generateModelName(context);
+      setModelData({
+        ...modelData,
+        name: generatedName
+      });
+    } catch (error) {
+      console.error('Error generating name:', error);
+      alert('Failed to generate name. Please try again or enter a name manually.');
+    } finally {
+      setGeneratingName(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -65,15 +88,30 @@ function ModelInfo() {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="name">Model Name *</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={modelData.name}
-                onChange={handleChange}
-                required
-                placeholder="e.g., Sophia"
-              />
+              <div className="name-input-wrapper">
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={modelData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="e.g., Sophia"
+                />
+                <button
+                  type="button"
+                  className="ai-generate-name-btn"
+                  onClick={handleGenerateName}
+                  disabled={generatingName}
+                  title="Generate name with AI"
+                >
+                  {generatingName ? (
+                    <span className="spinner">⟳</span>
+                  ) : (
+                    <span>✨ AI</span>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="form-group">

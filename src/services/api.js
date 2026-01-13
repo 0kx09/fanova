@@ -166,3 +166,24 @@ export const deleteModel = async (modelId) => {
 
   return response.json();
 };
+
+/**
+ * Generate a model name using AI
+ */
+export const generateModelName = async (context = {}) => {
+  const response = await fetch(`${API_BASE_URL}/models/generate-name`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(context),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate name');
+  }
+
+  const data = await response.json();
+  return data.name;
+};

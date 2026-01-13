@@ -103,6 +103,62 @@
   cursor: not-allowed;
 }
 
+/* Name Input Wrapper with AI Button */
+.name-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-input-wrapper input {
+  flex: 1;
+  padding-right: 80px; /* Make room for the button */
+}
+
+.ai-generate-name-btn {
+  position: absolute;
+  right: 4px;
+  padding: 8px 12px;
+  background: #1F1F23;
+  border: 1px solid #27272A;
+  border-radius: 6px;
+  color: #A1A1AA;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  outline: none;
+  z-index: 1;
+}
+
+.ai-generate-name-btn:hover:not(:disabled) {
+  background: #2563EB;
+  border-color: #2563EB;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.ai-generate-name-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ai-generate-name-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ai-generate-name-btn .spinner {
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+  font-size: 14px;
+}
+
 .form-group select {
   cursor: pointer;
   appearance: none;
@@ -1121,5 +1177,14 @@
 
   .feature-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .name-input-wrapper input {
+    padding-right: 70px; /* Adjust for smaller screens */
+  }
+
+  .ai-generate-name-btn {
+    padding: 6px 10px;
+    font-size: 11px;
   }
 }

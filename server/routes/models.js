@@ -5,6 +5,7 @@ const { generateImages } = require('../services/imageGenerator');
 const { analyzeReferenceImages, generatePromptFromAnalysis } = require('../services/imageAnalyzer');
 const { enhancePromptWithOpenAI } = require('../services/promptEnhancer');
 const { checkAndDeductForGeneration, getUserProfile } = require('../services/creditService');
+const { generateModelName } = require('../services/nameGenerator');
 const supabase = require('../config/supabase');
 
 // In-memory storage for testing (no MongoDB)
@@ -514,6 +515,35 @@ router.delete('/:id', async (req, res) => {
     console.error('Error deleting model:', error);
     res.status(500).json({
       error: 'Failed to delete model'
+    });
+  }
+});
+
+/**
+ * POST /api/models/generate-name
+ * Generate a model name using AI
+ */
+router.post('/generate-name', async (req, res) => {
+  try {
+    const { nationality, occupation, gender } = req.body;
+
+    console.log('Generating model name with context:', { nationality, occupation, gender });
+
+    const generatedName = await generateModelName({
+      nationality,
+      occupation,
+      gender
+    });
+
+    res.json({ 
+      success: true, 
+      name: generatedName 
+    });
+  } catch (error) {
+    console.error('Error generating model name:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate name',
+      message: error.message 
     });
   }
 });
