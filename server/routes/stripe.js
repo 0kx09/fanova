@@ -192,24 +192,60 @@ router.post('/process-payment-completion', async (req, res) => {
       return res.status(400).json({ error: 'Session ID is required' });
     }
 
-    console.log('Manually processing payment completion for session:', session_id);
+    console.log('🔧 Manually processing payment completion for session:', session_id);
 
     // Retrieve the session with full details
     const session = await stripe.checkout.sessions.retrieve(session_id, {
       expand: ['subscription']
     });
 
+    console.log('📋 Session retrieved:', {
+      id: session.id,
+      status: session.status,
+      subscription: session.subscription ? (typeof session.subscription === 'string' ? session.subscription : session.subscription.id) : null,
+      metadata: session.metadata
+    });
+
     if (session.status !== 'complete') {
-      return res.status(400).json({ error: 'Session is not complete' });
+      return res.status(400).json({ 
+        error: `Session is not complete. Current status: ${session.status}` 
+      });
     }
 
     // Process the payment completion using the same logic as webhook
     await handleCheckoutCompleted(session);
 
-    res.json({ success: true, message: 'Payment processed successfully' });
+    // Verify the update worked by fetching the profile
+    const userId = session.metadata?.user_id;
+    if (userId) {
+      const { data: verifyProfile, error: verifyError } = await supabase
+        .from('profiles')
+        .select('subscription_plan, credits, monthly_credits_allocated, stripe_subscription_id')
+        .eq('id', userId)
+        .single();
+
+      if (verifyError) {
+        console.error('⚠️ Warning: Could not verify profile update:', verifyError);
+      } else {
+        console.log('✅ Verification - Updated profile:', verifyProfile);
+        if (!verifyProfile.subscription_plan || verifyProfile.credits === 0) {
+          console.error('⚠️ WARNING: Profile update may have failed. Profile still shows:', verifyProfile);
+        }
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Payment processed successfully',
+      userId: userId
+    });
   } catch (error) {
-    console.error('Error processing payment completion:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error processing payment completion:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message || 'Failed to process payment completion',
+      details: error.stack
+    });
   }
 });
 
@@ -298,6 +334,11 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 /**
  * Handle successful checkout
+ * 
+ * IMPORTANT: The database trigger `allocate_credits_on_subscription_change` only allocates credits
+ * if subscription_start_date IS NULL (for new subscriptions). To work with this trigger:
+ * 1. For new subscriptions: Don't set subscription_start_date initially, let trigger allocate credits, then set it
+ * 2. For existing subscriptions: Manually add credits since trigger may not fire
  */
 async function handleCheckoutCompleted(session) {
   try {
@@ -315,16 +356,37 @@ async function handleCheckoutCompleted(session) {
     console.log('Checkout metadata:', { userId, modelId, selectedImageId, planTypeFromMetadata });
 
     // Get subscription details
-    const subscriptionId = session.subscription;
-    if (!subscriptionId) {
+    // session.subscription can be a string ID or an expanded object
+    let subscriptionId;
+    let subscription;
+    
+    if (typeof session.subscription === 'string') {
+      subscriptionId = session.subscription;
+      subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    } else if (session.subscription && session.subscription.id) {
+      subscription = session.subscription;
+      subscriptionId = subscription.id;
+    } else {
       console.error('No subscription ID in checkout session');
+      console.error('Session subscription value:', session.subscription);
       return;
     }
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const priceId = subscription.items.data[0]?.price.id;
 
-    console.log('Subscription details:', { subscriptionId, priceId, status: subscription.status });
+    console.log('Subscription details:', { 
+      subscriptionId, 
+      priceId, 
+      status: subscription.status,
+      trial_end: subscription.trial_end,
+      current_period_end: subscription.current_period_end,
+      current_period_start: subscription.current_period_start
+    });
+
+    // For trialing subscriptions, we still want to allocate credits
+    if (subscription.status === 'trialing') {
+      console.log('ℹ️ Subscription is in trialing status - credits will still be allocated');
+    }
 
     // Determine plan type - prefer metadata, then price mapping lookup
     let planType = planTypeFromMetadata || 'base';
@@ -367,45 +429,110 @@ async function handleCheckoutCompleted(session) {
     }
 
     const currentCredits = currentProfile?.credits || 0;
+    const currentSubscriptionStartDate = currentProfile?.subscription_start_date;
     const planDetails = getPlanCredits(planType);
+    const isNewSubscription = !currentSubscriptionStartDate;
 
-    console.log('✅ Checkout completed - Allocating credits');
+    console.log('✅ Checkout completed - Processing subscription');
     console.log('User Details:', {
       userId,
       planType,
       currentCredits,
       monthlyCredits: planDetails.monthlyCredits,
-      newCredits: currentCredits + planDetails.monthlyCredits,
       subscriptionId,
-      subscriptionStatus: subscription.status
+      subscriptionStatus: subscription.status,
+      isNewSubscription: isNewSubscription,
+      currentSubscriptionStartDate: currentSubscriptionStartDate
     });
 
-    // Update subscription plan
-    const { error: updateError } = await supabase
+    // The database trigger will allocate credits if subscription_start_date is NULL
+    // So for new subscriptions, we leave it NULL initially to trigger credit allocation
+    // Then update it in a second query
+    const updateData = {
+      subscription_plan: planType,
+      stripe_subscription_id: subscriptionId,
+      subscription_renewal_date: new Date(subscription.current_period_end * 1000).toISOString()
+    };
+
+    // Only set subscription_start_date if it's not a new subscription
+    // For new subscriptions, leave it NULL so the trigger allocates credits
+    if (!isNewSubscription) {
+      updateData.subscription_start_date = new Date().toISOString();
+    }
+    // For new subscriptions, we'll set subscription_start_date after the trigger runs
+
+    // If it's not a new subscription, manually add credits (trigger won't fire for renewals unless conditions are met)
+    if (!isNewSubscription) {
+      updateData.credits = currentCredits + planDetails.monthlyCredits;
+      updateData.monthly_credits_allocated = planDetails.monthlyCredits;
+    }
+
+    console.log('📝 Attempting to update profile with data:', updateData);
+
+    const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
-      .update({
-        subscription_plan: planType,
-        stripe_subscription_id: subscriptionId,
-        subscription_start_date: new Date().toISOString(),
-        subscription_renewal_date: new Date(subscription.current_period_end * 1000).toISOString(),
-        credits: currentCredits + planDetails.monthlyCredits
-      })
-      .eq('id', userId);
+      .update(updateData)
+      .eq('id', userId)
+      .select()
+      .single();
 
     if (updateError) {
       console.error('❌ CRITICAL ERROR: Failed to update user profile');
       console.error('Update Error:', JSON.stringify(updateError, null, 2));
-      console.error('Attempted update data:', {
-        planType,
-        subscriptionId,
-        creditsToAdd: planDetails.monthlyCredits,
-        newTotal: currentCredits + planDetails.monthlyCredits
-      });
-      return;
+      console.error('Error Code:', updateError.code);
+      console.error('Error Message:', updateError.message);
+      console.error('Error Details:', updateError.details);
+      console.error('Error Hint:', updateError.hint);
+      console.error('Attempted update data:', updateData);
+      throw new Error(`Failed to update profile: ${updateError.message}`);
     }
 
-    console.log('✅ Successfully updated user profile with plan:', planType);
-    console.log('✅ Credits allocated:', planDetails.monthlyCredits, '(Total:', currentCredits + planDetails.monthlyCredits, ')');
+    if (!updatedProfile) {
+      console.error('❌ CRITICAL ERROR: Update returned no data');
+      throw new Error('Profile update returned no data');
+    }
+
+    console.log('✅ Profile updated. Trigger should have allocated credits.');
+    console.log('✅ Updated profile data:', {
+      subscription_plan: updatedProfile.subscription_plan,
+      credits: updatedProfile.credits,
+      monthly_credits_allocated: updatedProfile.monthly_credits_allocated,
+      stripe_subscription_id: updatedProfile.stripe_subscription_id,
+      subscription_start_date: updatedProfile.subscription_start_date
+    });
+
+    // For new subscriptions, now set the subscription_start_date
+    // (credits should already be allocated by the trigger)
+    if (isNewSubscription && !updatedProfile.subscription_start_date) {
+      console.log('📝 Setting subscription_start_date for new subscription');
+      const { error: dateUpdateError } = await supabase
+        .from('profiles')
+        .update({ subscription_start_date: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (dateUpdateError) {
+        console.error('⚠️ Warning: Failed to set subscription_start_date:', dateUpdateError);
+      } else {
+        console.log('✅ subscription_start_date set successfully');
+      }
+    }
+
+    // Verify credits were allocated
+    const { data: finalProfile } = await supabase
+      .from('profiles')
+      .select('credits, monthly_credits_allocated, subscription_plan')
+      .eq('id', userId)
+      .single();
+
+    if (finalProfile) {
+      console.log('✅ Final profile state:', finalProfile);
+      if (finalProfile.credits === 0 || !finalProfile.subscription_plan) {
+        console.error('⚠️ WARNING: Credits may not have been allocated properly!');
+        console.error('Final profile:', finalProfile);
+      } else {
+        console.log('✅ Credits verified:', finalProfile.credits, 'credits allocated');
+      }
+    }
 
       // Record subscription history
       const { error: historyError } = await supabase
