@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './ModelPages.css';
 import { generateModelImages } from '../services/api';
-import { saveGeneratedImages, selectModelImage, getModel } from '../services/supabaseService';
+import { saveGeneratedImages, selectModelImage, getModel, getUserProfile } from '../services/supabaseService';
 import PlanSelection from '../components/PlanSelection';
 
 function GenerateResults() {
@@ -45,6 +45,15 @@ function GenerateResults() {
       } catch (err) {
         console.error('Error fetching model data:', err);
         // Don't fail if we can't fetch model data, just log it
+      }
+
+      // Check if user has a subscription plan
+      try {
+        const profile = await getUserProfile();
+        setHasSubscriptionPlan(profile.subscription_plan && profile.subscription_plan !== null);
+      } catch (err) {
+        console.error('Error checking subscription plan:', err);
+        setHasSubscriptionPlan(false);
       }
 
       // Start progress animation (60 seconds = 1 minute)
@@ -167,6 +176,7 @@ function GenerateResults() {
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [showPlanSelection, setShowPlanSelection] = useState(false);
+  const [hasSubscriptionPlan, setHasSubscriptionPlan] = useState(null);
 
   const handleSelectImage = (index) => {
     setSelectedImageIndex(index);
@@ -178,8 +188,41 @@ function GenerateResults() {
       return;
     }
 
-    // Show plan selection instead of going directly to dashboard
-    setShowPlanSelection(true);
+    try {
+      // Check if user already has a subscription plan
+      const profile = await getUserProfile();
+      
+      if (profile.subscription_plan && profile.subscription_plan !== null) {
+        // User already has a plan - just save the selected image and go to dashboard
+        const modelId = location.state?.modelId || localStorage.getItem('currentModelId');
+        const selectedImage = generatedImages[selectedImageIndex];
+        
+        if (modelId && selectedImage) {
+          try {
+            // Save the selected image if we have a dbId
+            if (selectedImage.dbId) {
+              await selectModelImage(modelId, selectedImage.dbId);
+            } else if (selectedImage.url) {
+              // If no dbId, the image might not be saved yet - try to save it
+              console.log('Selected image has no dbId, but user has plan - proceeding to dashboard');
+            }
+          } catch (error) {
+            console.error('Error selecting model image:', error);
+            // Continue to dashboard even if image selection fails
+          }
+        }
+        
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        // No plan - show plan selection
+        setShowPlanSelection(true);
+      }
+    } catch (error) {
+      console.error('Error checking subscription plan:', error);
+      // If we can't check, show plan selection as fallback
+      setShowPlanSelection(true);
+    }
   };
 
   const handleRegenerate = () => {
@@ -328,7 +371,7 @@ function GenerateResults() {
                   onClick={handleConfirmSelection}
                   disabled={selectedImageIndex === null}
                 >
-                  Choose Plan & Continue
+                  {hasSubscriptionPlan ? 'Continue to Dashboard' : 'Choose Plan & Continue'}
                 </button>
               </div>
             ) : (
