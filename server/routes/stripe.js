@@ -406,12 +406,28 @@ async function handleCheckoutCompleted(session) {
       console.warn('⚠️ Subscription status is not active or trialing:', subscriptionStatus);
     }
 
+    // Calculate renewal date - use current_period_end, trial_end, or calculate from current_period_start
+    let renewalDate = null;
+    if (subscription.current_period_end) {
+      renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+    } else if (subscription.trial_end) {
+      renewalDate = new Date(subscription.trial_end * 1000).toISOString();
+    } else if (subscription.current_period_start) {
+      // If no end date, calculate 30 days from start
+      renewalDate = new Date((subscription.current_period_start + (30 * 24 * 60 * 60)) * 1000).toISOString();
+    } else {
+      // Fallback: 30 days from now
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 30);
+      renewalDate = futureDate.toISOString();
+    }
+
     // Update profile with subscription and credits
     const updateData = {
       subscription_plan: planType,
       stripe_subscription_id: subscriptionId,
       subscription_start_date: new Date().toISOString(),
-      subscription_renewal_date: new Date(subscription.current_period_end * 1000).toISOString(),
+      subscription_renewal_date: renewalDate,
       monthly_credits_allocated: planDetails.monthlyCredits
     };
 
@@ -548,14 +564,27 @@ async function handleSubscriptionUpdate(subscription) {
 
     const planDetails = getPlanCredits(planType);
 
+    // Calculate renewal date safely
+    let renewalDate = null;
+    if (subscription.current_period_end) {
+      renewalDate = new Date(subscription.current_period_end * 1000).toISOString();
+    } else if (subscription.trial_end) {
+      renewalDate = new Date(subscription.trial_end * 1000).toISOString();
+    }
+
     // Update subscription info (don't allocate credits on update - only on new subscriptions)
+    const updateData = {
+      subscription_plan: planType,
+      stripe_subscription_id: subscription.id
+    };
+    
+    if (renewalDate) {
+      updateData.subscription_renewal_date = renewalDate;
+    }
+
     await supabase
       .from('profiles')
-      .update({
-        subscription_plan: planType,
-        stripe_subscription_id: subscription.id,
-        subscription_renewal_date: new Date(subscription.current_period_end * 1000).toISOString()
-      })
+      .update(updateData)
       .eq('id', profile.id);
 
     console.log('✅ Subscription updated for user:', profile.id);
