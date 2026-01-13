@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { getModel, deleteImage, getUserProfile } from '../services/supabaseService';
 import { checkCreditsForGeneration } from '../services/imageGenerationService';
 import { getPlanDetails } from '../services/pricingService';
-import { generateModelImagesFromChat } from '../services/api';
+import { generateModelImagesFromChat, generateImagesFromUploadedImage } from '../services/api';
 import { generateNSFWImage, prepareImageForWavespeed } from '../services/wavespeedService';
 import './ModelView.css';
 
@@ -40,10 +40,14 @@ function ModelView() {
   const [nsfwSelectedImage, setNsfwSelectedImage] = useState(null);
   const [isNsfwGenerating, setIsNsfwGenerating] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedImagePreview, setUploadedImagePreview] = useState(null);
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const chatMessagesRef = useRef(null);
   const nsfwChatMessagesRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const canvasRef = useRef(null);
+  const imageUploadRef = useRef(null);
 
   useEffect(() => {
     loadModel();
@@ -93,7 +97,7 @@ function ModelView() {
       setChatMessages([
         {
           type: 'system',
-          content: `Hi! I'm ready to generate more images of ${modelData.name}. Just describe what you'd like to see - for example: "Generate images in a coffee shop", "Show her smiling outdoors", or "Create professional headshot style images".`
+          content: `Hi! I'm ready to generate more images of ${modelData.name}. You can:\n\n1. Describe what you'd like to see (e.g., "Generate images in a coffee shop", "Show her smiling outdoors")\n\n2. Upload an image (📷 button) - I'll analyze it and generate similar images using ${modelData.name}'s appearance`
         }
       ]);
 
@@ -259,6 +263,189 @@ function ModelView() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      window.alert('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      window.alert('Image size must be less than 10MB');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target.result;
+      setUploadedImagePreview(base64);
+      setUploadedImage(base64);
+      
+      // Add user message showing image was uploaded
+      setChatMessages(prev => [...prev, {
+        type: 'user',
+        content: 'Uploaded image',
+        image: base64
+      }]);
+
+      // Automatically start generation
+      await handleGenerateFromImage(base64);
+    };
+    reader.onerror = () => {
+      window.alert('Error reading image file');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleGenerateFromImage = async (imageBase64) => {
+    if (!imageBase64 || isGenerating || isAnalyzingImage) return;
+
+    // Check credits before generation
+    try {
+      const creditCheck = await checkCreditsForGeneration(false, { batch: true });
+      if (!creditCheck.hasCredits) {
+        setChatMessages(prev => [...prev, {
+          type: 'error',
+          content: creditCheck.error || 'Insufficient credits. Please recharge your credits to continue.'
+        }]);
+        return;
+      }
+      setCreditCost(creditCheck.cost);
+    } catch (error) {
+      console.error('Error checking credits:', error);
+      setChatMessages(prev => [...prev, {
+        type: 'error',
+        content: 'Error checking credits. Please try again.'
+      }]);
+      return;
+    }
+
+    setIsAnalyzingImage(true);
+    setChatInput('');
+
+    // Add analyzing message
+    setChatMessages(prev => [...prev, {
+      type: 'system',
+      content: 'Analyzing uploaded image and generating similar images...'
+    }]);
+
+    setIsGenerating(true);
+    setGenerationProgress(0);
+    setTimeRemaining(60);
+
+    // Start progress animation
+    const totalTime = 60;
+    const updateInterval = 100;
+    const progressStep = (updateInterval / (totalTime * 1000)) * 100;
+    let currentProgress = 0;
+    let currentTimeRemaining = totalTime;
+
+    progressIntervalRef.current = setInterval(() => {
+      currentProgress += progressStep;
+      currentTimeRemaining -= (updateInterval / 1000);
+
+      if (currentProgress >= 95) {
+        currentProgress = 95;
+      }
+      if (currentTimeRemaining <= 0) {
+        currentTimeRemaining = 0;
+      }
+
+      setGenerationProgress(currentProgress);
+      setTimeRemaining(Math.ceil(currentTimeRemaining));
+    }, updateInterval);
+
+    try {
+      // Generate images from uploaded image
+      const response = await generateImagesFromUploadedImage(modelId, imageBase64, 3);
+
+      // Clear progress interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+
+      // Complete progress to 100%
+      setGenerationProgress(100);
+      setTimeRemaining(0);
+
+      if (response.success && response.images) {
+        // Update credits
+        try {
+          const profile = await getUserProfile();
+          setCredits(profile.credits);
+        } catch (error) {
+          console.error('Error updating credits:', error);
+        }
+
+        // Small delay to show 100% completion
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Remove analyzing message
+        setChatMessages(prev => prev.filter(msg => msg.content !== 'Analyzing uploaded image and generating similar images...'));
+
+        // Show selection modal
+        setSelectionImages(response.images);
+        setSelectionPrompt('Generated from uploaded image');
+        setSelectedImageIndex(null);
+
+        // Clear uploaded image
+        setUploadedImage(null);
+        setUploadedImagePreview(null);
+        if (imageUploadRef.current) {
+          imageUploadRef.current.value = '';
+        }
+      } else {
+        throw new Error('Failed to generate images');
+      }
+    } catch (error) {
+      console.error('Error generating from uploaded image:', error);
+
+      // Clear progress interval
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+
+      // Reset progress
+      setGenerationProgress(0);
+      setTimeRemaining(60);
+
+      // Remove analyzing message and show error
+      let errorMessage = `Sorry, there was an error: ${error.message}. Please try again.`;
+      
+      if (error.message && error.message.includes('Insufficient credits') || 
+          error.response?.status === 402 || 
+          error.response?.data?.code === 'INSUFFICIENT_CREDITS') {
+        errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please recharge your credits to continue generating images.';
+      }
+
+      setChatMessages(prev => {
+        const filtered = prev.filter(msg => msg.content !== 'Analyzing uploaded image and generating similar images...');
+        return [...filtered, {
+          type: 'error',
+          content: errorMessage
+        }];
+      });
+    } finally {
+      setIsGenerating(false);
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const handleRemoveUploadedImage = () => {
+    setUploadedImage(null);
+    setUploadedImagePreview(null);
+    if (imageUploadRef.current) {
+      imageUploadRef.current.value = '';
     }
   };
 
@@ -957,26 +1144,63 @@ function ModelView() {
                         </div>
                       </div>
                     )}
+                    {message.type === 'user' && message.image && (
+                      <div className="message-uploaded-image">
+                        <img src={message.image} alt="Uploaded" />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
               <div className="chat-input-area">
-                <textarea
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Describe what you'd like to generate... (e.g., 'petting her dog, smiling at the camera', 'in a coffee shop looking at camera')"
-                  disabled={isGenerating}
-                  rows={2}
-                />
-                <button
-                  className="send-btn"
-                  onClick={handleSendMessage}
-                  disabled={!chatInput.trim() || isGenerating}
-                >
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </button>
+                {uploadedImagePreview && (
+                  <div className="uploaded-image-preview">
+                    <img src={uploadedImagePreview} alt="Uploaded" />
+                    <button 
+                      className="remove-uploaded-image-btn"
+                      onClick={handleRemoveUploadedImage}
+                      title="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+                <div className="chat-input-wrapper">
+                  <input
+                    type="file"
+                    id="imageUpload"
+                    ref={imageUploadRef}
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                    disabled={isGenerating || isAnalyzingImage}
+                  />
+                  <label 
+                    htmlFor="imageUpload" 
+                    className="image-upload-btn"
+                    title="Upload image to generate similar images"
+                  >
+                    📷
+                  </label>
+                  <textarea
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={uploadedImagePreview 
+                      ? "Image uploaded! Click 'Generate from Image' to create similar images..." 
+                      : "Describe what you'd like to generate... (e.g., 'petting her dog, smiling at the camera', 'in a coffee shop looking at camera') OR upload an image (📷) to generate similar images"}
+                    disabled={isGenerating || isAnalyzingImage}
+                    rows={2}
+                  />
+                  <button
+                    className="send-btn"
+                    onClick={uploadedImagePreview ? () => handleGenerateFromImage(uploadedImage) : handleSendMessage}
+                    disabled={(!chatInput.trim() && !uploadedImagePreview) || isGenerating || isAnalyzingImage}
+                  >
+                    {isGenerating || isAnalyzingImage ? 'Generating...' : uploadedImagePreview ? 'Generate from Image' : 'Generate'}
+                  </button>
+                </div>
               </div>
             </div>
               </>
@@ -1109,26 +1333,28 @@ function ModelView() {
                   </div>
 
                   <div className="chat-input-area">
-                    <textarea
-                      value={nsfwChatInput}
-                      onChange={(e) => setNsfwChatInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleNsfwSendMessage();
-                        }
-                      }}
-                      placeholder={nsfwSelectedImage ? "Describe the changes you want to make..." : "Select or upload an image first, then describe changes..."}
-                      disabled={isNsfwGenerating || !nsfwSelectedImage}
-                      rows={2}
-                    />
-                    <button
-                      className="send-btn"
-                      onClick={handleNsfwSendMessage}
-                      disabled={!nsfwChatInput.trim() || isNsfwGenerating || !nsfwSelectedImage}
-                    >
-                      {isNsfwGenerating ? 'Generating...' : 'Generate'}
-                    </button>
+                    <div className="chat-input-wrapper">
+                      <textarea
+                        value={nsfwChatInput}
+                        onChange={(e) => setNsfwChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleNsfwSendMessage();
+                          }
+                        }}
+                        placeholder={nsfwSelectedImage ? "Describe the changes you want to make..." : "Select or upload an image first, then describe changes..."}
+                        disabled={isNsfwGenerating || !nsfwSelectedImage}
+                        rows={2}
+                      />
+                      <button
+                        className="send-btn"
+                        onClick={handleNsfwSendMessage}
+                        disabled={!nsfwChatInput.trim() || isNsfwGenerating || !nsfwSelectedImage}
+                      >
+                        {isNsfwGenerating ? 'Generating...' : 'Generate'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </>

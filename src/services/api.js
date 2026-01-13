@@ -187,3 +187,29 @@ export const generateModelName = async (context = {}) => {
   const data = await response.json();
   return data.name;
 };
+
+/**
+ * Generate images from an uploaded image
+ * Analyzes the image and generates similar images using the model
+ */
+export const generateImagesFromUploadedImage = async (modelId, imageBase64, numImages = 3, isNsfw = false, options = {}) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}/generate-from-image`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      imageBase64,
+      numImages,
+      isNsfw,
+      options
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate images from uploaded image');
+  }
+
+  return response.json();
+};

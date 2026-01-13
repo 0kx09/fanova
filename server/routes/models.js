@@ -7,6 +7,7 @@ const { enhancePromptWithOpenAI } = require('../services/promptEnhancer');
 const { checkAndDeductForGeneration, getUserProfile } = require('../services/creditService');
 const { generateModelName } = require('../services/nameGenerator');
 const { enhancePromptWithVisualConsistency } = require('../services/imageConsistencyService');
+const { generatePromptFromImage } = require('../services/imagePromptGenerator');
 const supabase = require('../config/supabase');
 
 // In-memory storage for testing (no MongoDB)
@@ -584,6 +585,116 @@ router.post('/generate-name', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to generate name',
       message: error.message 
+    });
+  }
+});
+
+/**
+ * POST /api/models/:id/generate-from-image
+ * Generate images based on an uploaded image
+ * Analyzes the image with Vision API and generates similar images using the model
+ */
+router.post('/:id/generate-from-image', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { imageBase64, numImages = 3, isNsfw = false, options = {} } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'Image is required' });
+    }
+
+    // Get model from Supabase
+    const { data: model, error: fetchError } = await supabase
+      .from('models')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Check and deduct credits before generation
+    try {
+      const creditResult = await checkAndDeductForGeneration(model.user_id, isNsfw, {
+        ...options,
+        batch: numImages === 3
+      });
+      
+      console.log(`Credits deducted: ${creditResult.cost}, Remaining: ${creditResult.remainingCredits}`);
+    } catch (creditError) {
+      return res.status(402).json({
+        error: creditError.message || 'Insufficient credits',
+        code: 'INSUFFICIENT_CREDITS'
+      });
+    }
+
+    // Build model data
+    const modelData = {
+      age: model.age,
+      nationality: model.nationality,
+      attributes: model.attributes || {},
+      facialFeatures: model.facial_features || {}
+    };
+
+    console.log('📸 Analyzing uploaded image and generating prompt...');
+
+    // Generate prompt from the uploaded image
+    let prompt;
+    try {
+      prompt = await generatePromptFromImage(imageBase64, modelData);
+      console.log('✅ Generated prompt from image analysis');
+    } catch (error) {
+      console.error('Error generating prompt from image:', error);
+      return res.status(500).json({
+        error: 'Failed to analyze image and generate prompt',
+        details: error.message
+      });
+    }
+
+    // Enhance prompt with visual consistency from existing model images
+    try {
+      prompt = await enhancePromptWithVisualConsistency(id, prompt, modelData);
+      console.log('✅ Enhanced prompt with model consistency');
+    } catch (error) {
+      console.error('⚠️ Error enhancing with consistency, using base prompt:', error.message);
+    }
+
+    const negativePrompt = generateNegativePrompt();
+
+    console.log('User uploaded image, generated prompt:', prompt.substring(0, 200) + '...');
+
+    // Get reference image for image-to-image if available
+    let referenceImageUrl = null;
+    try {
+      const { getModelReferenceImages } = require('../services/imageConsistencyService');
+      const referenceImages = await getModelReferenceImages(id);
+      if (referenceImages.length > 0) {
+        referenceImageUrl = referenceImages[0];
+        console.log('📸 Using model reference image for additional consistency');
+      }
+    } catch (error) {
+      console.error('⚠️ Error fetching reference images:', error.message);
+    }
+
+    // Generate images
+    const imageUrls = await generateImages(prompt, negativePrompt, numImages, referenceImageUrl);
+
+    res.json({
+      success: true,
+      images: imageUrls,
+      prompt: 'Generated from uploaded image',
+      fullPrompt: prompt,
+      model: {
+        id: model.id,
+        name: model.name,
+        generationCount: (model.generation_count || 0) + numImages
+      }
+    });
+  } catch (error) {
+    console.error('Error generating images from uploaded image:', error);
+    res.status(500).json({
+      error: error.message || 'Failed to generate images from uploaded image'
     });
   }
 });
