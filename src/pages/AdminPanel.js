@@ -88,7 +88,7 @@ function AdminPanel() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
@@ -99,12 +99,12 @@ function AdminPanel() {
       setSelectedUser(userId);
       setShowUserModal(true);
     } catch (error) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
   const handleBanUser = async (userId, reason = '') => {
-    if (!confirm('Are you sure you want to ban this user?')) return;
+    if (!window.confirm('Are you sure you want to ban this user?')) return;
     try {
       await banUser(userId, reason || 'No reason provided');
       loadData();
@@ -112,7 +112,7 @@ function AdminPanel() {
         handleViewUser(userId);
       }
     } catch (error) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
@@ -124,12 +124,12 @@ function AdminPanel() {
         handleViewUser(userId);
       }
     } catch (error) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
   const handleLockUser = async (userId, reason = '') => {
-    if (!confirm('Are you sure you want to lock this user account?')) return;
+    if (!window.confirm('Are you sure you want to lock this user account?')) return;
     try {
       await lockUser(userId, reason || 'No reason provided');
       loadData();
@@ -137,7 +137,7 @@ function AdminPanel() {
         handleViewUser(userId);
       }
     } catch (error) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
@@ -154,22 +154,22 @@ function AdminPanel() {
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm('⚠️ WARNING: This will permanently delete the user and all their data. This cannot be undone. Are you absolutely sure?')) return;
-    if (!confirm('This is your last chance. Delete user?')) return;
+    if (!window.confirm('⚠️ WARNING: This will permanently delete the user and all their data. This cannot be undone. Are you absolutely sure?')) return;
+    if (!window.confirm('This is your last chance. Delete user?')) return;
     try {
       await deleteUser(userId);
-      alert('User deleted successfully');
+      window.alert('User deleted successfully');
       loadData();
       setShowUserModal(false);
     } catch (error) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
   const handleUpdateUser = async (userId, updates) => {
     try {
       await updateUser(userId, updates);
-      alert('User updated successfully');
+      window.alert('User updated successfully');
       loadData();
       if (selectedUser === userId) {
         handleViewUser(userId);
@@ -181,18 +181,18 @@ function AdminPanel() {
 
   const handleCreateAdmin = async () => {
     if (!newAdminEmail) {
-      alert('Email is required');
+      window.alert('Email is required');
       return;
     }
     try {
       await createAdmin(newAdminEmail, newAdminRole);
-      alert('Admin created successfully');
+      window.alert('Admin created successfully');
       setShowAdminModal(false);
       setNewAdminEmail('');
       setNewAdminRole('admin');
       loadData();
     } catch (error) {
-      alert(error.message);
+      window.alert(error.message);
     }
   };
 
@@ -470,7 +470,7 @@ function AdminPanel() {
                       Unban User
                     </button>
                   ) : (
-                    <button className="btn-danger" onClick={() => handleBanUser(userDetails.profile.id, prompt('Ban reason (optional):'))}>
+                    <button className="btn-danger" onClick={() => handleBanUser(userDetails.profile.id, window.prompt('Ban reason (optional):'))}>
                       Ban User
                     </button>
                   )}
@@ -480,7 +480,7 @@ function AdminPanel() {
                       Unlock Account
                     </button>
                   ) : (
-                    <button className="btn-warning" onClick={() => handleLockUser(userDetails.profile.id, prompt('Lock reason (optional):'))}>
+                    <button className="btn-warning" onClick={() => handleLockUser(userDetails.profile.id, window.prompt('Lock reason (optional):'))}>
                       Lock Account
                     </button>
                   )}
@@ -488,7 +488,7 @@ function AdminPanel() {
                   <button 
                     className="btn-primary"
                     onClick={() => {
-                      const credits = prompt('Enter new credit amount:', userDetails.profile.credits);
+                      const credits = window.prompt('Enter new credit amount:', userDetails.profile.credits);
                       if (credits !== null) {
                         handleUpdateUser(userDetails.profile.id, { credits: parseInt(credits) });
                       }
