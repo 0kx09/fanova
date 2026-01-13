@@ -3,8 +3,9 @@ const axios = require('axios');
 /**
  * Enhance prompt using OpenAI GPT-4o
  * Takes user request and model data, returns optimized prompt for image generation
+ * Optionally uses referenceImageBase64 for visual consistency
  */
-async function enhancePromptWithOpenAI(modelData, userPrompt) {
+async function enhancePromptWithOpenAI(modelData, userPrompt, referenceImageBase64 = null) {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
   if (!OPENAI_API_KEY) {
@@ -45,23 +46,50 @@ IMPORTANT: Pay careful attention to:
 - Ensure the setting is clearly described in the prompt
 - Ensure clothing is clearly described in the prompt`;
 
-    const userMessage = `${modelContext}
+    let userMessage = `${modelContext}
 
 User Request: "${userPrompt}"
 
 Create an optimized, detailed prompt for generating a mirror selfie photo that:
 1. Fulfills the user's request EXACTLY: "${userPrompt}" - THIS IS THE PRIORITY
-2. Incorporates the model's physical characteristics (age, hair, eyes, facial features) from above
-3. If user mentions a setting (beach, restaurant, gym, etc.), use clothing appropriate for that setting
-4. If user mentions clothing directly, use that clothing exactly
-5. DO NOT use the model's stored "style" attribute if it conflicts with the user's request
-6. Includes proper composition (full body if requested, otherwise head/shoulders)
-7. Is optimized for AI image generation
-8. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
+2. Incorporates the model's physical characteristics (age, hair, eyes, facial features) from above`;
+
+    // If reference image is provided, add visual consistency instruction
+    if (referenceImageBase64) {
+      userMessage += `
+3. CRITICAL: Maintain the EXACT same facial features, hair characteristics, skin tone, and overall appearance as shown in the reference image
+4. The new image should look like the SAME PERSON, just in a different setting/pose/clothing as requested`;
+    } else {
+      userMessage += `
+3. Incorporates the model's physical characteristics (age, hair, eyes, facial features) from above`;
+    }
+
+    userMessage += `
+${referenceImageBase64 ? '5' : '4'}. If user mentions a setting (beach, restaurant, gym, etc.), use clothing appropriate for that setting
+${referenceImageBase64 ? '6' : '5'}. If user mentions clothing directly, use that clothing exactly
+${referenceImageBase64 ? '7' : '6'}. DO NOT use the model's stored "style" attribute if it conflicts with the user's request
+${referenceImageBase64 ? '8' : '7'}. Includes proper composition (full body if requested, otherwise head/shoulders)
+${referenceImageBase64 ? '9' : '8'}. Is optimized for AI image generation
+${referenceImageBase64 ? '10' : '9'}. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
 
 CRITICAL: User's explicit requests (setting, clothing, outfit) override any stored model attributes. If user says "beach" or "suitable outfit for beach", use beach-appropriate clothing (bikini, swimsuit, beachwear), NOT the model's stored style.
 
 Return ONLY the prompt text, nothing else.`;
+
+    // Build message content - include image if provided
+    const messageContent = [];
+    messageContent.push({ type: "text", text: userMessage });
+    
+    if (referenceImageBase64) {
+      messageContent.push({
+        type: "image_url",
+        image_url: {
+          url: referenceImageBase64,
+          detail: "high"
+        }
+      });
+      console.log('👁️ Using vision API with reference image for prompt enhancement');
+    }
 
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -74,7 +102,7 @@ Return ONLY the prompt text, nothing else.`;
           },
           {
             role: "user",
-            content: userMessage
+            content: messageContent
           }
         ],
         max_tokens: 1500,

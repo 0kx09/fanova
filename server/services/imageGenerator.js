@@ -2,8 +2,9 @@ const axios = require('axios');
 
 /**
  * Generate images using Fal.ai API (Flux Pro or similar model)
+ * Supports image-to-image generation with referenceImageUrl for consistency
  */
-async function generateWithFalAi(prompt, negativePrompt, numImages = 3) {
+async function generateWithFalAi(prompt, negativePrompt, numImages = 3, referenceImageUrl = null) {
   const FAL_AI_KEY = process.env.FAL_AI_KEY;
 
   if (!FAL_AI_KEY) {
@@ -11,20 +12,29 @@ async function generateWithFalAi(prompt, negativePrompt, numImages = 3) {
   }
 
   try {
+    const requestBody = {
+      prompt: prompt,
+      negative_prompt: negativePrompt,
+      num_images: numImages,
+      image_size: {
+        width: 768,
+        height: 1024
+      },
+      num_inference_steps: 28,
+      guidance_scale: 3.5,
+      enable_safety_checker: true
+    };
+
+    // Add image-to-image support if reference image is provided
+    if (referenceImageUrl) {
+      requestBody.image_url = referenceImageUrl;
+      requestBody.strength = 0.6; // Balance between reference and new prompt (0.0-1.0)
+      console.log('🎨 Using image-to-image generation for consistency');
+    }
+
     const response = await axios.post(
       'https://fal.run/fal-ai/flux-pro',
-      {
-        prompt: prompt,
-        negative_prompt: negativePrompt,
-        num_images: numImages,
-        image_size: {
-          width: 768,
-          height: 1024
-        },
-        num_inference_steps: 28,
-        guidance_scale: 3.5,
-        enable_safety_checker: true
-      },
+      requestBody,
       {
         headers: {
           'Authorization': `Key ${FAL_AI_KEY}`,
@@ -181,8 +191,9 @@ async function generateWithGoogleImagen(prompt, negativePrompt, numImages = 3) {
 /**
  * Main image generation function
  * Priority: Google Imagen → Fal.ai → Replicate
+ * Supports referenceImageUrl for consistency (image-to-image)
  */
-async function generateImages(prompt, negativePrompt, numImages = 3) {
+async function generateImages(prompt, negativePrompt, numImages = 3, referenceImageUrl = null) {
   try {
     // Try Google Imagen first (easiest to get API key)
     if (process.env.GOOGLE_API_KEY) {
@@ -190,10 +201,10 @@ async function generateImages(prompt, negativePrompt, numImages = 3) {
       return await generateWithGoogleImagen(prompt, negativePrompt, numImages);
     }
 
-    // Try Fal.ai
+    // Try Fal.ai (supports image-to-image)
     if (process.env.FAL_AI_KEY) {
       console.log('Generating images with Fal.ai...');
-      return await generateWithFalAi(prompt, negativePrompt, numImages);
+      return await generateWithFalAi(prompt, negativePrompt, numImages, referenceImageUrl);
     }
 
     // Fallback to Replicate

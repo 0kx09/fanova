@@ -6,6 +6,7 @@ const { analyzeReferenceImages, generatePromptFromAnalysis } = require('../servi
 const { enhancePromptWithOpenAI } = require('../services/promptEnhancer');
 const { checkAndDeductForGeneration, getUserProfile } = require('../services/creditService');
 const { generateModelName } = require('../services/nameGenerator');
+const { enhancePromptWithVisualConsistency } = require('../services/imageConsistencyService');
 const supabase = require('../config/supabase');
 
 // In-memory storage for testing (no MongoDB)
@@ -182,13 +183,40 @@ router.post('/:id/generate-chat', async (req, res) => {
       facialFeatures: model.facial_features || {}
     };
 
-    // Try to enhance prompt with OpenAI first
+    // IMPORTANT: Get reference images FIRST for consistency
+    let referenceImageUrl = null;
+    let referenceImageBase64 = null;
+    try {
+      const { getModelReferenceImages, imageUrlToBase64 } = require('../services/imageConsistencyService');
+      const referenceImages = await getModelReferenceImages(id);
+      
+      if (referenceImages.length > 0) {
+        referenceImageUrl = referenceImages[0];
+        console.log('📸 Found reference image for consistency');
+        
+        // Convert to base64 for Vision API
+        try {
+          referenceImageBase64 = await imageUrlToBase64(referenceImageUrl);
+          if (referenceImageBase64) {
+            console.log('✅ Reference image converted to base64 for Vision API');
+          }
+        } catch (e) {
+          console.error('⚠️ Could not convert reference image to base64:', e.message);
+        }
+      } else {
+        console.log('No reference images found for this model');
+      }
+    } catch (error) {
+      console.error('⚠️ Error fetching reference images:', error.message);
+    }
+
+    // Try to enhance prompt with OpenAI first (with reference image if available)
     let prompt;
     try {
-      const enhancedPrompt = await enhancePromptWithOpenAI(modelData, userPrompt);
+      const enhancedPrompt = await enhancePromptWithOpenAI(modelData, userPrompt, referenceImageBase64);
       if (enhancedPrompt) {
         prompt = enhancedPrompt;
-        console.log('Using OpenAI-enhanced prompt');
+        console.log('✅ Using OpenAI-enhanced prompt' + (referenceImageBase64 ? ' with vision' : ''));
       } else {
         // Fall back to default prompt generation
         prompt = generateChatPrompt(modelData, userPrompt);
@@ -201,13 +229,24 @@ router.post('/:id/generate-chat', async (req, res) => {
       console.log('Using default prompt generation (fallback)');
     }
 
+    // Additional enhancement: Analyze reference image for consistency features
+    if (referenceImageUrl && !referenceImageBase64) {
+      // If we have URL but couldn't convert, try again or use URL directly
+      try {
+        prompt = await enhancePromptWithVisualConsistency(id, prompt, modelData);
+        console.log('✅ Prompt enhanced with visual consistency analysis');
+      } catch (error) {
+        console.error('⚠️ Error enhancing with visual consistency:', error.message);
+      }
+    }
+
     const negativePrompt = generateNegativePrompt();
 
     console.log('User request:', userPrompt);
-    console.log('Generated full prompt:', prompt);
+    console.log('Final enhanced prompt:', prompt.substring(0, 200) + '...');
 
-    // Generate images
-    const imageUrls = await generateImages(prompt, negativePrompt, numImages);
+    // Generate images (with reference image for image-to-image if available)
+    const imageUrls = await generateImages(prompt, negativePrompt, numImages, referenceImageUrl);
 
     // NOTE: Do NOT save images automatically here for chat generation
     // Images will be saved when user selects one in the frontend
