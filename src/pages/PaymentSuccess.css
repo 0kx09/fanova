@@ -77,3 +77,50 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.retry-notice {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-primary);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}

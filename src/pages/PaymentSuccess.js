@@ -9,78 +9,128 @@ function PaymentSuccess() {
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState(null);
+  const [processing, setProcessing] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
   const sessionId = searchParams.get('session_id');
   const modelId = searchParams.get('modelId');
 
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000; // 2 seconds
+
   useEffect(() => {
     if (sessionId) {
-      checkSessionStatus();
+      processPayment();
     } else {
       setError('No session ID found');
       setStatus('error');
+      setProcessing(false);
     }
   }, [sessionId]);
 
-  const checkSessionStatus = async () => {
+  const processPayment = async () => {
     try {
-      const data = await getSessionStatus(sessionId);
-      console.log('Session status:', data);
-      setStatus(data.status);
+      console.log('🔄 Starting payment processing for session:', sessionId);
+      
+      // Get session status
+      const sessionData = await getSessionStatus(sessionId);
+      console.log('📋 Session status:', sessionData);
+      
+      setStatus(sessionData.status);
 
-      if (data.status === 'complete') {
-        // Payment successful - wait a moment for webhook to process
-        console.log('Payment complete, waiting for webhook processing...');
-        console.log('Session metadata:', data.metadata);
-        console.log('Subscription:', data.subscription);
-
-        // Wait for webhook (5 seconds)
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        // Check if profile was updated by webhook
-        let profile = await getUserProfile();
-        console.log('Profile after 5s wait:', profile);
-
-        // If webhook didn't process (subscription_plan still null), manually trigger it
-        if (!profile.subscription_plan && data.metadata?.plan_type) {
-          console.log('⚠️ Webhook did not process payment. Manually triggering...');
-          try {
-            await processPaymentCompletion(sessionId);
-            console.log('✅ Manual payment processing complete');
-
-            // Wait a moment and refresh profile again
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            profile = await getUserProfile();
-            console.log('Profile after manual processing:', profile);
-          } catch (manualError) {
-            console.error('Error manually processing payment:', manualError);
-            // Continue anyway - user can contact support if needed
-          }
-        } else {
-          console.log('✅ Webhook processed successfully');
+      if (sessionData.status !== 'complete') {
+        if (sessionData.status === 'open') {
+          // Session still open, redirect back
+          navigate('/generate-results');
+          return;
         }
-
-        // Redirect to dashboard
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1000);
-      } else if (data.status === 'open') {
-        // Session still open, redirect back
-        navigate('/generate-results');
+        setError(`Payment session is ${sessionData.status}. Please try again.`);
+        setProcessing(false);
+        return;
       }
+
+      console.log('✅ Payment session is complete');
+      console.log('📊 Subscription:', sessionData.subscription);
+      console.log('📝 Metadata:', sessionData.metadata);
+
+      // Process payment immediately (don't wait for webhook)
+      await processPaymentWithRetry(sessionData);
+
     } catch (err) {
-      console.error('Error checking session status:', err);
-      setError(err.message);
-      setStatus('error');
+      console.error('❌ Error processing payment:', err);
+      setError(err.message || 'Failed to process payment. Please contact support.');
+      setProcessing(false);
     }
   };
 
-  if (status === 'loading') {
+  const processPaymentWithRetry = async (sessionData, attempt = 0) => {
+    try {
+      console.log(`🔄 Processing payment (attempt ${attempt + 1}/${MAX_RETRIES + 1})...`);
+
+      // Try manual processing first
+      const result = await processPaymentCompletion(sessionId);
+      console.log('✅ Manual processing result:', result);
+
+      // Wait a moment for database to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Verify the profile was updated
+      const profile = await getUserProfile();
+      console.log('👤 Profile after processing:', profile);
+
+      // Check if payment was processed successfully
+      if (profile.subscription_plan && profile.credits > 0) {
+        console.log('✅ Payment processed successfully!');
+        console.log('📊 Final profile:', {
+          plan: profile.subscription_plan,
+          credits: profile.credits,
+          monthly_credits: profile.monthly_credits_allocated
+        });
+        setProcessing(false);
+        
+        // Redirect to dashboard after short delay
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 2000);
+        return;
+      }
+
+      // If we get here, payment wasn't processed yet
+      if (attempt < MAX_RETRIES) {
+        console.log(`⚠️ Payment not processed yet, retrying in ${RETRY_DELAY}ms...`);
+        setRetryCount(attempt + 1);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return processPaymentWithRetry(sessionData, attempt + 1);
+      } else {
+        // Max retries reached
+        console.error('❌ Payment processing failed after max retries');
+        setError('Payment was successful but we couldn\'t activate your subscription. Please contact support with your session ID: ' + sessionId);
+        setProcessing(false);
+      }
+    } catch (err) {
+      console.error(`❌ Error on attempt ${attempt + 1}:`, err);
+      
+      if (attempt < MAX_RETRIES) {
+        console.log(`🔄 Retrying in ${RETRY_DELAY}ms...`);
+        setRetryCount(attempt + 1);
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return processPaymentWithRetry(sessionData, attempt + 1);
+      } else {
+        setError(err.message || 'Failed to process payment after multiple attempts. Please contact support.');
+        setProcessing(false);
+      }
+    }
+  };
+
+  if (status === 'loading' || processing) {
     return (
       <div className="payment-success-container">
         <div className="payment-status">
           <div className="loading-spinner"></div>
           <h2>Processing your payment...</h2>
-          <p>Please wait while we confirm your subscription.</p>
+          <p>Please wait while we activate your subscription.</p>
+          {retryCount > 0 && (
+            <p className="retry-notice">Retrying... ({retryCount}/{MAX_RETRIES})</p>
+          )}
         </div>
       </div>
     );
@@ -91,11 +141,16 @@ function PaymentSuccess() {
       <div className="payment-success-container">
         <div className="payment-status error">
           <div className="status-icon">✕</div>
-          <h2>Payment Error</h2>
+          <h2>Payment Processing Error</h2>
           <p>{error || 'Something went wrong with your payment.'}</p>
-          <button className="btn-primary" onClick={() => navigate('/dashboard')}>
-            Go to Dashboard
-          </button>
+          <div className="error-actions">
+            <button className="btn-primary" onClick={() => navigate('/dashboard')}>
+              Go to Dashboard
+            </button>
+            <button className="btn-secondary" onClick={() => window.location.reload()}>
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -107,9 +162,9 @@ function PaymentSuccess() {
         <div className="payment-status success">
           <div className="status-icon">✓</div>
           <h2>Payment Successful!</h2>
-          <p>Your subscription has been activated. Redirecting to dashboard...</p>
+          <p>Your subscription has been activated successfully.</p>
           <div className="success-details">
-            <p>Your model is now ready to use.</p>
+            <p>Redirecting to dashboard...</p>
           </div>
         </div>
       </div>
