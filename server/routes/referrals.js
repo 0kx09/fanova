@@ -93,7 +93,7 @@ router.get('/my-link', async (req, res) => {
       .eq('referrer_id', userId);
 
     // Build referral link
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = process.env.FRONTEND_URL || 'https://usefanova.com';
     const referralLink = `${baseUrl}/register?ref=${profile.referral_code}`;
 
     res.json({

@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
  * Get user's referral link and stats
@@ -12,7 +12,7 @@ export const getMyReferralLink = async () => {
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/referrals/my-link`, {
+  const response = await fetch(`${API_BASE_URL}/referrals/my-link`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
@@ -38,7 +38,7 @@ export const getReferralStats = async () => {
     throw new Error('Not authenticated');
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/referrals/stats`, {
+  const response = await fetch(`${API_BASE_URL}/referrals/stats`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${session.access_token}`,
@@ -58,7 +58,7 @@ export const getReferralStats = async () => {
  * Process referral after signup
  */
 export const processReferral = async (userId, referralCode) => {
-  const response = await fetch(`${API_BASE_URL}/api/referrals/process`, {
+  const response = await fetch(`${API_BASE_URL}/referrals/process`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
