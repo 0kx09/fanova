@@ -2,7 +2,7 @@
  * Generate a detailed prompt for iPhone selfie-style image generation
  */
 function generatePrompt(modelData) {
-  const { attributes, facialFeatures, age } = modelData;
+  const { attributes, facialFeatures, age, nationality } = modelData;
 
   let promptParts = [];
 
@@ -29,6 +29,60 @@ function generatePrompt(modelData) {
   }
 
   promptParts.push(subjectDesc);
+
+  // CRITICAL: Add nationality/ethnicity - this determines facial features and appearance
+  if (nationality) {
+    const nationalityLower = nationality.toLowerCase();
+    
+    // Map nationality to specific ethnic appearance descriptors
+    if (nationalityLower.includes('latin') || nationalityLower.includes('latina') || 
+        nationalityLower.includes('latino') || nationalityLower.includes('hispanic') ||
+        nationalityLower.includes('mexican') || nationalityLower.includes('brazilian') ||
+        nationalityLower.includes('colombian') || nationalityLower.includes('argentinian')) {
+      promptParts.push('Latina/Latino appearance');
+      promptParts.push('Latin American facial features');
+      promptParts.push('typically olive to tan skin tone');
+    } else if (nationalityLower.includes('asian') || nationalityLower.includes('chinese') ||
+               nationalityLower.includes('japanese') || nationalityLower.includes('korean') ||
+               nationalityLower.includes('vietnamese') || nationalityLower.includes('thai') ||
+               nationalityLower.includes('filipino') || nationalityLower.includes('indian')) {
+      promptParts.push('Asian appearance');
+      promptParts.push('Asian facial features');
+      if (nationalityLower.includes('indian') || nationalityLower.includes('pakistani') ||
+          nationalityLower.includes('bangladeshi') || nationalityLower.includes('sri lankan')) {
+        promptParts.push('South Asian features');
+        promptParts.push('typically medium to darker skin tone');
+      } else {
+        promptParts.push('East Asian or Southeast Asian features');
+        promptParts.push('typically light to medium skin tone');
+      }
+    } else if (nationalityLower.includes('african') || nationalityLower.includes('black') ||
+               nationalityLower.includes('nigerian') || nationalityLower.includes('ethiopian') ||
+               nationalityLower.includes('kenyan') || nationalityLower.includes('ghanaian')) {
+      promptParts.push('African/African American appearance');
+      promptParts.push('African facial features');
+      promptParts.push('typically darker skin tone');
+    } else if (nationalityLower.includes('european') || nationalityLower.includes('caucasian') ||
+               nationalityLower.includes('british') || nationalityLower.includes('french') ||
+               nationalityLower.includes('german') || nationalityLower.includes('italian') ||
+               nationalityLower.includes('spanish') || nationalityLower.includes('russian') ||
+               nationalityLower.includes('american') || nationalityLower.includes('canadian') ||
+               nationalityLower.includes('australian')) {
+      promptParts.push('European/Caucasian appearance');
+      promptParts.push('Caucasian facial features');
+      promptParts.push('typically light to medium skin tone');
+    } else if (nationalityLower.includes('middle eastern') || nationalityLower.includes('arab') ||
+               nationalityLower.includes('persian') || nationalityLower.includes('iranian') ||
+               nationalityLower.includes('turkish') || nationalityLower.includes('lebanese')) {
+      promptParts.push('Middle Eastern appearance');
+      promptParts.push('Middle Eastern facial features');
+      promptParts.push('typically olive to medium skin tone');
+    } else {
+      // Generic nationality descriptor
+      promptParts.push(`${nationality} appearance`);
+      promptParts.push(`${nationality} facial features`);
+    }
+  }
 
   // Physical attributes - detailed and specific
   if (attributes) {
@@ -227,7 +281,7 @@ function generateNegativePrompt() {
  * with the existing model's characteristics
  */
 function generateChatPrompt(modelData, userPrompt) {
-  const { attributes, facialFeatures, age } = modelData;
+  const { attributes, facialFeatures, age, nationality } = modelData;
 
   let promptParts = [];
 

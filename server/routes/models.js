@@ -179,6 +179,7 @@ router.post('/:id/generate-chat', async (req, res) => {
     // Build model data
     const modelData = {
       age: model.age,
+      nationality: model.nationality,
       attributes: model.attributes || {},
       facialFeatures: model.facial_features || {}
     };

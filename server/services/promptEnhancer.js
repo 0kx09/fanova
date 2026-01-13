@@ -14,12 +14,13 @@ async function enhancePromptWithOpenAI(modelData, userPrompt, referenceImageBase
   }
 
   try {
-    const { attributes, facialFeatures, age } = modelData;
+    const { attributes, facialFeatures, age, nationality } = modelData;
     
     // Build context about the model
     let modelContext = `Model Information:\n`;
     if (age) modelContext += `- Age: ${age}\n`;
     if (attributes?.gender) modelContext += `- Gender: ${attributes.gender}\n`;
+    if (nationality) modelContext += `- Nationality/Ethnicity: ${nationality}\n`;
     if (attributes?.hairColor) modelContext += `- Hair: ${attributes.hairLength || ''} ${attributes.hairStyle || ''} ${attributes.hairColor}\n`;
     if (attributes?.eyeColor) modelContext += `- Eyes: ${attributes.eyeColor}\n`;
     if (attributes?.skinTone) modelContext += `- Skin: ${attributes.skinTone}\n`;
@@ -41,6 +42,7 @@ Key requirements for mirror selfie prompts:
 Your response should be ONLY the optimized prompt text (no explanations, no code blocks, no markdown). The prompt should be detailed, specific, and optimized for image generation AI models like Stable Diffusion or Flux.
 
 IMPORTANT: Pay careful attention to:
+- Nationality/Ethnicity: If nationality is specified (e.g., Latina, Asian, African, European, etc.), the person MUST look like that ethnicity. Use appropriate facial features, skin tone, and characteristics that match that nationality/ethnicity.
 - Setting/environment descriptions (restaurant, cafe, park, beach, etc.)
 - Clothing descriptions (elegant dress, fancy outfit, etc.)
 - Ensure the setting is clearly described in the prompt
@@ -52,25 +54,29 @@ User Request: "${userPrompt}"
 
 Create an optimized, detailed prompt for generating a mirror selfie photo that:
 1. Fulfills the user's request EXACTLY: "${userPrompt}" - THIS IS THE PRIORITY
-2. Incorporates the model's physical characteristics (age, hair, eyes, facial features) from above`;
+2. CRITICAL - Nationality/Ethnicity: If nationality is specified in the model information, the person MUST have the facial features, skin tone, and characteristics that match that nationality/ethnicity. For example:
+   - If nationality is "Latina" or "Latin American": Use Latina/Latino facial features, typically darker skin tone, specific facial structure
+   - If nationality is "Asian": Use Asian facial features, typically lighter to medium skin tone, specific eye shape
+   - If nationality is "African" or "African American": Use African/African American facial features, typically darker skin tone, specific facial structure
+   - If nationality is "European" or "Caucasian": Use European/Caucasian facial features, typically lighter skin tone
+   - Apply similar logic for other nationalities/ethnicities
+   - This is CRITICAL for accuracy - the generated person must look like the specified nationality/ethnicity
+3. Incorporates the model's physical characteristics (age, hair, eyes, facial features) from above`;
 
     // If reference image is provided, add visual consistency instruction
     if (referenceImageBase64) {
       userMessage += `
-3. CRITICAL: Maintain the EXACT same facial features, hair characteristics, skin tone, and overall appearance as shown in the reference image
-4. The new image should look like the SAME PERSON, just in a different setting/pose/clothing as requested`;
-    } else {
-      userMessage += `
-3. Incorporates the model's physical characteristics (age, hair, eyes, facial features) from above`;
+4. CRITICAL: Maintain the EXACT same facial features, hair characteristics, skin tone, nationality/ethnicity appearance, and overall appearance as shown in the reference image
+5. The new image should look like the SAME PERSON, just in a different setting/pose/clothing as requested`;
     }
 
     userMessage += `
-${referenceImageBase64 ? '5' : '4'}. If user mentions a setting (beach, restaurant, gym, etc.), use clothing appropriate for that setting
-${referenceImageBase64 ? '6' : '5'}. If user mentions clothing directly, use that clothing exactly
-${referenceImageBase64 ? '7' : '6'}. DO NOT use the model's stored "style" attribute if it conflicts with the user's request
-${referenceImageBase64 ? '8' : '7'}. Includes proper composition (full body if requested, otherwise head/shoulders)
-${referenceImageBase64 ? '9' : '8'}. Is optimized for AI image generation
-${referenceImageBase64 ? '10' : '9'}. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
+${referenceImageBase64 ? '6' : '4'}. If user mentions a setting (beach, restaurant, gym, etc.), use clothing appropriate for that setting
+${referenceImageBase64 ? '7' : '5'}. If user mentions clothing directly, use that clothing exactly
+${referenceImageBase64 ? '8' : '6'}. DO NOT use the model's stored "style" attribute if it conflicts with the user's request
+${referenceImageBase64 ? '9' : '7'}. Includes proper composition (full body if requested, otherwise head/shoulders)
+${referenceImageBase64 ? '10' : '8'}. Is optimized for AI image generation
+${referenceImageBase64 ? '11' : '9'}. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
 
 CRITICAL: User's explicit requests (setting, clothing, outfit) override any stored model attributes. If user says "beach" or "suitable outfit for beach", use beach-appropriate clothing (bikini, swimsuit, beachwear), NOT the model's stored style.
 
