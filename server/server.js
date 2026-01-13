@@ -11,10 +11,12 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Routes
+const authRouter = require('./routes/auth');
 const modelsRouter = require('./routes/models');
 const stripeRouter = require('./routes/stripe');
 const adminRouter = require('./routes/admin');
 const referralsRouter = require('./routes/referrals');
+app.use('/api/auth', authRouter);
 app.use('/api/models', modelsRouter);
 app.use('/api/stripe', stripeRouter);
 app.use('/api/admin', adminRouter);

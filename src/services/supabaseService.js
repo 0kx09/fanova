@@ -11,31 +11,13 @@ export const createModel = async (modelData) => {
   }
 
   // Ensure user profile exists before creating model
-  const { data: existingProfile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !existingProfile) {
-    // Profile doesn't exist, create it
-    const { error: createProfileError } = await supabase
-      .from('profiles')
-      .insert([
-        {
-          id: user.id,
-          email: user.email || '',
-          credits: 50,
-          subscription_plan: null // No plan by default
-        }
-      ])
-      .select()
-      .single();
-
-    if (createProfileError) {
-      console.error('Error creating profile:', createProfileError);
-      throw new Error('Failed to create user profile. Please try again.');
-    }
+  // Use the backend API to bypass RLS issues
+  try {
+    const { ensureProfile } = await import('./authService');
+    await ensureProfile();
+  } catch (profileError) {
+    console.error('Error ensuring profile exists:', profileError);
+    throw new Error('Failed to set up user profile. Please refresh the page and try again.');
   }
 
   // Parse and validate age

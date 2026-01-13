@@ -76,6 +76,20 @@ function Register() {
         // Registration successful
         console.log('User registered:', data.user);
 
+        // CRITICAL: Ensure profile is created immediately
+        // This bypasses RLS issues by using the backend service role
+        try {
+          const { ensureProfile } = await import('../services/authService');
+          await ensureProfile();
+          console.log('✅ Profile created successfully');
+        } catch (profileError) {
+          console.error('❌ Failed to create profile:', profileError);
+          // This is critical - show error and don't proceed
+          setError('Account created but profile setup failed. Please contact support.');
+          setLoading(false);
+          return;
+        }
+
         // Note: Referral is processed by database trigger automatically
         // The trigger reads the referral_code from user metadata and processes it
         // We don't need to call the API endpoint here as the trigger handles it
