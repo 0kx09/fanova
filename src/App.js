@@ -13,6 +13,8 @@ import DashboardNew from './pages/DashboardNew';
 import ModelView from './pages/ModelView';
 import Subscription from './pages/Subscription';
 import PaymentSuccess from './pages/PaymentSuccess';
+import AdminLogin from './pages/AdminLogin';
+import AdminPanel from './pages/AdminPanel';
 import './App.css';
 
 function App() {
@@ -32,6 +34,8 @@ function App() {
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/model/:modelId" element={<ModelView />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </div>
     </Router>

@@ -13,8 +13,10 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Routes
 const modelsRouter = require('./routes/models');
 const stripeRouter = require('./routes/stripe');
+const adminRouter = require('./routes/admin');
 app.use('/api/models', modelsRouter);
 app.use('/api/stripe', stripeRouter);
+app.use('/api/admin', adminRouter);
 
 // Health check
 app.get('/health', (req, res) => {
