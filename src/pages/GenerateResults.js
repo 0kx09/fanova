@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './ModelPages.css';
 import { generateModelImages } from '../services/api';
-import { saveGeneratedImages, selectModelImage } from '../services/supabaseService';
+import { saveGeneratedImages, selectModelImage, getModel } from '../services/supabaseService';
 import PlanSelection from '../components/PlanSelection';
 
 function GenerateResults() {
@@ -16,6 +16,7 @@ function GenerateResults() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [enlargedImage, setEnlargedImage] = useState(null);
+  const [modelData, setModelData] = useState(null);
   const hasGenerated = useRef(false);
   const progressIntervalRef = useRef(null);
 
@@ -26,6 +27,25 @@ function GenerateResults() {
         return;
       }
       hasGenerated.current = true;
+
+      // Get modelId from location state or localStorage
+      const modelId = location.state?.modelId || localStorage.getItem('currentModelId');
+
+      if (!modelId) {
+        setError('No model found. Please create a model first.');
+        setGenerating(false);
+        return;
+      }
+
+      // Fetch model data from Supabase
+      try {
+        const model = await getModel(modelId);
+        setModelData(model);
+        console.log('Fetched model data:', model);
+      } catch (err) {
+        console.error('Error fetching model data:', err);
+        // Don't fail if we can't fetch model data, just log it
+      }
 
       // Start progress animation (60 seconds = 1 minute)
       setGenerationProgress(0);
@@ -52,15 +72,6 @@ function GenerateResults() {
       }, updateInterval);
 
       try {
-        // Get modelId from location state or localStorage
-        const modelId = location.state?.modelId || localStorage.getItem('currentModelId');
-
-        if (!modelId) {
-          setError('No model found. Please create a model first.');
-          setGenerating(false);
-          return;
-        }
-
         console.log('Generating images for model:', modelId);
 
         // Check if using reference images
@@ -334,39 +345,40 @@ function GenerateResults() {
             <div className="model-summary">
               <h3>Model Summary</h3>
               <div className="summary-content">
-                {(() => {
-                  const modelInfo = JSON.parse(localStorage.getItem('modelInfo') || '{}');
-                  const attributes = JSON.parse(localStorage.getItem('modelAttributes') || '{}');
-                  const features = JSON.parse(localStorage.getItem('facialFeatures') || '{}');
+                {modelData ? (
+                  <>
+                    <div className="summary-section">
+                      <strong>Basic Info:</strong>
+                      <p>Name: {modelData.name || 'N/A'}</p>
+                      {modelData.age && <p>Age: {modelData.age}</p>}
+                      {modelData.nationality && <p>Nationality: {modelData.nationality}</p>}
+                      {modelData.occupation && <p>Occupation: {modelData.occupation}</p>}
+                    </div>
 
-                  return (
-                    <>
-                      <div className="summary-section">
-                        <strong>Basic Info:</strong>
-                        <p>Name: {modelInfo.name || 'N/A'}</p>
-                        {modelInfo.age && <p>Age: {modelInfo.age}</p>}
-                        {modelInfo.nationality && <p>Nationality: {modelInfo.nationality}</p>}
-                      </div>
-
+                    {modelData.attributes && (
                       <div className="summary-section">
                         <strong>Attributes:</strong>
-                        {attributes.hairColor && <p>Hair: {attributes.hairColor} {attributes.hairStyle}</p>}
-                        {attributes.eyeColor && <p>Eyes: {attributes.eyeColor}</p>}
-                        {attributes.style && <p>Style: {attributes.style}</p>}
+                        {modelData.attributes.gender && <p>Gender: {modelData.attributes.gender}</p>}
+                        {modelData.attributes.hairColor && <p>Hair: {modelData.attributes.hairColor} {modelData.attributes.hairStyle}</p>}
+                        {modelData.attributes.eyeColor && <p>Eyes: {modelData.attributes.eyeColor}</p>}
+                        {modelData.attributes.skinTone && <p>Skin: {modelData.attributes.skinTone}</p>}
+                        {modelData.attributes.style && <p>Style: {modelData.attributes.style}</p>}
                       </div>
+                    )}
 
-                      {features.faceShape && (
-                        <div className="summary-section">
-                          <strong>Facial Features:</strong>
-                          <p>Face: {features.faceShape}</p>
-                          {features.eyeShape && <p>Eye Shape: {features.eyeShape}</p>}
-                          {features.noseShape && <p>Nose: {features.noseShape}</p>}
-                          {features.lipShape && <p>Lips: {features.lipShape}</p>}
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
+                    {modelData.facial_features && (
+                      <div className="summary-section">
+                        <strong>Facial Features:</strong>
+                        {modelData.facial_features.faceShape && <p>Face: {modelData.facial_features.faceShape}</p>}
+                        {modelData.facial_features.eyeShape && <p>Eye Shape: {modelData.facial_features.eyeShape}</p>}
+                        {modelData.facial_features.noseShape && <p>Nose: {modelData.facial_features.noseShape}</p>}
+                        {modelData.facial_features.lipShape && <p>Lips: {modelData.facial_features.lipShape}</p>}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="loading-text">Loading model data...</p>
+                )}
               </div>
             </div>
           </>

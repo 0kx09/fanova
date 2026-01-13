@@ -160,15 +160,55 @@ router.get('/session-status', async (req, res) => {
       return res.status(400).json({ error: 'Session ID is required' });
     }
 
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['subscription']
+    });
 
     res.json({
       status: session.status,
       customer_email: session.customer_details?.email,
-      metadata: session.metadata
+      metadata: session.metadata,
+      subscription: session.subscription ? {
+        id: session.subscription.id,
+        status: session.subscription.status,
+        current_period_end: session.subscription.current_period_end
+      } : null
     });
   } catch (error) {
     console.error('Error retrieving session status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * POST /api/stripe/process-payment-completion
+ * Manually process payment completion (fallback if webhook didn't fire)
+ */
+router.post('/process-payment-completion', async (req, res) => {
+  try {
+    const { session_id } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    console.log('Manually processing payment completion for session:', session_id);
+
+    // Retrieve the session with full details
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['subscription']
+    });
+
+    if (session.status !== 'complete') {
+      return res.status(400).json({ error: 'Session is not complete' });
+    }
+
+    // Process the payment completion using the same logic as webhook
+    await handleCheckoutCompleted(session);
+
+    res.json({ success: true, message: 'Payment processed successfully' });
+  } catch (error) {
+    console.error('Error processing payment completion:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -92,6 +92,31 @@ export const getSessionStatus = async (sessionId) => {
 };
 
 /**
+ * Manually process payment completion (fallback if webhook didn't fire)
+ */
+export const processPaymentCompletion = async (sessionId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/stripe/process-payment-completion`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ session_id: sessionId })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to process payment completion');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error processing payment completion:', error);
+    throw error;
+  }
+};
+
+/**
  * Create a Stripe Customer Portal session for billing management
  */
 export const createCustomerPortalSession = async () => {

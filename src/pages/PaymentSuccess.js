@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getSessionStatus } from '../services/stripeService';
+import { getSessionStatus, processPaymentCompletion } from '../services/stripeService';
 import { getUserProfile } from '../services/supabaseService';
 import './PaymentSuccess.css';
 
@@ -28,18 +28,37 @@ function PaymentSuccess() {
       setStatus(data.status);
 
       if (data.status === 'complete') {
-        // Payment successful - wait a moment for webhook to process, then refresh profile
+        // Payment successful - wait a moment for webhook to process
         console.log('Payment complete, waiting for webhook processing...');
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        // Try to refresh user profile to get updated subscription
-        try {
-          const profile = await getUserProfile();
-          console.log('Updated profile after payment:', profile);
-        } catch (profileError) {
-          console.error('Error refreshing profile:', profileError);
+        console.log('Session metadata:', data.metadata);
+        console.log('Subscription:', data.subscription);
+
+        // Wait for webhook (5 seconds)
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        // Check if profile was updated by webhook
+        let profile = await getUserProfile();
+        console.log('Profile after 5s wait:', profile);
+
+        // If webhook didn't process (subscription_plan still null), manually trigger it
+        if (!profile.subscription_plan && data.metadata?.plan_type) {
+          console.log('⚠️ Webhook did not process payment. Manually triggering...');
+          try {
+            await processPaymentCompletion(sessionId);
+            console.log('✅ Manual payment processing complete');
+
+            // Wait a moment and refresh profile again
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            profile = await getUserProfile();
+            console.log('Profile after manual processing:', profile);
+          } catch (manualError) {
+            console.error('Error manually processing payment:', manualError);
+            // Continue anyway - user can contact support if needed
+          }
+        } else {
+          console.log('✅ Webhook processed successfully');
         }
-        
+
         // Redirect to dashboard
         setTimeout(() => {
           navigate('/dashboard');
