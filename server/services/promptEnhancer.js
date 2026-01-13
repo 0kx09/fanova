@@ -41,6 +41,7 @@ Key requirements for mirror selfie prompts:
 9. CRITICAL: Must look like it was taken on an iPhone - include iPhone camera characteristics
 10. CRITICAL: Add realistic imperfections - subtle noise, grain, natural photo artifacts
 11. CRITICAL: Should look like an actual photo, not a perfect render - include natural imperfections
+12. CRITICAL: Setting/environment description is HIGHEST PRIORITY - if user says "messy bedroom", the bedroom MUST be messy with unmade bed, clothes scattered, disorganized. If user says "clean", make it clean. NEVER override user's setting description with generic "clean" or "organized" defaults.
 
 Your response should be ONLY the optimized prompt text (no explanations, no code blocks, no markdown). The prompt should be detailed, specific, and optimized for image generation AI models like Stable Diffusion or Flux.
 
@@ -50,6 +51,8 @@ IMPORTANT: Pay careful attention to:
 - Clothing descriptions (elegant dress, fancy outfit, etc.)
 - Ensure the setting is clearly described in the prompt
 - Ensure clothing is clearly described in the prompt
+- CRITICAL: If user mentions "messy", "cluttered", "untidy", "disorganized", "unmade bed", "clothes scattered", etc., the setting MUST be messy and cluttered. Do NOT make it clean or organized. Include details like: unmade bed, clothes on furniture/floor, disorganized items, lived-in appearance.
+- CRITICAL: User's setting description (messy, clean, cluttered, etc.) is the HIGHEST PRIORITY - do not override it with generic "clean" or "organized" descriptions.
 - CRITICAL: Always include "taken on iPhone", "iPhone camera quality", "iPhone photo" in the prompt
 - CRITICAL: Always include realistic imperfections: "subtle film grain", "natural photo noise", "realistic photo imperfections", "authentic photo grain"
 - CRITICAL: The image must look like an actual iPhone photo, not a perfect render - include natural noise, grain, and imperfections`;
@@ -77,16 +80,17 @@ Create an optimized, detailed prompt for generating a mirror selfie photo that:
     }
 
     userMessage += `
-${referenceImageBase64 ? '6' : '4'}. If user mentions a setting (beach, restaurant, gym, etc.), use clothing appropriate for that setting
-${referenceImageBase64 ? '7' : '5'}. If user mentions clothing directly, use that clothing exactly
-${referenceImageBase64 ? '8' : '6'}. DO NOT use the model's stored "style" attribute if it conflicts with the user's request
-${referenceImageBase64 ? '9' : '7'}. Includes proper composition (full body if requested, otherwise head/shoulders)
-${referenceImageBase64 ? '10' : '8'}. Is optimized for AI image generation
-${referenceImageBase64 ? '11' : '9'}. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
-${referenceImageBase64 ? '12' : '10'}. CRITICAL: Must include "taken on iPhone", "iPhone camera quality", and realistic imperfections like "subtle film grain", "natural photo noise", "realistic photo imperfections" to make it look like an actual iPhone photo
-${referenceImageBase64 ? '13' : '11'}. Should look like a real photo taken on an iPhone, not a perfect render - include natural noise, grain, and imperfections that make it authentic
+${referenceImageBase64 ? '6' : '4'}. If user mentions a setting (beach, restaurant, gym, bedroom, etc.), describe that setting EXACTLY as requested. If user says "messy bedroom", the bedroom MUST be messy with unmade bed, clothes scattered, disorganized items. If user says "clean bedroom", make it clean. NEVER override user's setting description.
+${referenceImageBase64 ? '7' : '5'}. CRITICAL - Setting details: If user mentions "messy", "cluttered", "untidy", "disorganized", "unmade bed", "clothes on floor/chair", etc., the background MUST show these elements: unmade bed, clothes scattered on furniture or floor, disorganized room, lived-in messy appearance. Do NOT make it clean or organized.
+${referenceImageBase64 ? '8' : '6'}. If user mentions clothing directly, use that clothing exactly
+${referenceImageBase64 ? '9' : '7'}. DO NOT use the model's stored "style" attribute if it conflicts with the user's request
+${referenceImageBase64 ? '10' : '8'}. Includes proper composition (full body if requested, otherwise head/shoulders)
+${referenceImageBase64 ? '11' : '9'}. Is optimized for AI image generation
+${referenceImageBase64 ? '12' : '10'}. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
+${referenceImageBase64 ? '13' : '11'}. CRITICAL: Must include "taken on iPhone", "iPhone camera quality", and realistic imperfections like "subtle film grain", "natural photo noise", "realistic photo imperfections" to make it look like an actual iPhone photo
+${referenceImageBase64 ? '14' : '12'}. Should look like a real photo taken on an iPhone, not a perfect render - include natural noise, grain, and imperfections that make it authentic
 
-CRITICAL: User's explicit requests (setting, clothing, outfit) override any stored model attributes. If user says "beach" or "suitable outfit for beach", use beach-appropriate clothing (bikini, swimsuit, beachwear), NOT the model's stored style.
+CRITICAL: User's explicit requests (setting, clothing, outfit) override any stored model attributes. If user says "beach" or "suitable outfit for beach", use beach-appropriate clothing (bikini, swimsuit, beachwear), NOT the model's stored style. If user says "messy bedroom", the bedroom MUST be messy - do NOT make it clean or organized.
 
 Return ONLY the prompt text, nothing else.`;
 

@@ -35,8 +35,9 @@ Key requirements:
 6. Orientation: Vertical 9:16 portrait orientation
 7. Quality: Ultra realistic, photorealistic, looks like real person
 8. Style: Instagram-ready, social media aesthetic
-9. CRITICAL: Must look like it was taken on an iPhone - include "taken on iPhone", "iPhone camera quality"
-10. CRITICAL: Add realistic imperfections - "subtle film grain", "natural photo noise", "realistic photo imperfections"
+9. CRITICAL: If the uploaded image shows a messy/cluttered setting (unmade bed, clothes scattered, disorganized), the prompt MUST describe it as messy and cluttered. Do NOT make it clean or organized.
+10. CRITICAL: Must look like it was taken on an iPhone - include "taken on iPhone", "iPhone camera quality"
+11. CRITICAL: Add realistic imperfections - "subtle film grain", "natural photo noise", "realistic photo imperfections"
 
 Your response should be ONLY the optimized prompt text (no explanations, no code blocks, no markdown). The prompt should be detailed, specific, and optimized for image generation AI models like Stable Diffusion or Flux.`;
 
@@ -45,7 +46,7 @@ Your response should be ONLY the optimized prompt text (no explanations, no code
 Analyze this uploaded image and create a detailed prompt for generating a similar image.
 
 The prompt should:
-1. Describe the setting/environment shown in the image (e.g., bedroom, coffee shop, beach, gym, etc.)
+1. Describe the setting/environment shown in the image EXACTLY as it appears (e.g., bedroom, coffee shop, beach, gym, etc.). If the image shows a messy bedroom with unmade bed and clothes scattered, describe it as "messy bedroom with unmade bed, clothes scattered on furniture, disorganized room". If it's clean, describe it as clean. NEVER override what you see in the image.
 2. Describe the pose and composition (e.g., standing, sitting, full body, half body, etc.)
 3. Describe the clothing/outfit shown in the image
 4. Describe the expression and mood
@@ -55,6 +56,7 @@ The prompt should:
 
 CRITICAL: 
 - Maintain the exact same setting, pose, clothing, and composition as the uploaded image
+- If the uploaded image shows a messy/cluttered setting, the prompt MUST describe it as messy with details like "unmade bed", "clothes scattered", "disorganized room", "lived-in messy appearance". Do NOT make it clean or organized.
 - But apply the model's facial features, hair characteristics, and physical appearance
 - If nationality is specified, ensure the person looks like that nationality/ethnicity
 - The generated image should look like the model person in the uploaded image's scenario

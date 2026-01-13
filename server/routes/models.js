@@ -242,7 +242,7 @@ router.post('/:id/generate-chat', async (req, res) => {
       }
     }
 
-    const negativePrompt = generateNegativePrompt();
+    const negativePrompt = generateNegativePrompt(userPrompt);
 
     console.log('User request:', userPrompt);
     console.log('Final enhanced prompt:', prompt.substring(0, 200) + '...');
@@ -313,7 +313,7 @@ router.post('/:id/generate', async (req, res) => {
 
       // Use in-memory model
       const prompt = generatePrompt(memoryModel);
-      const negativePrompt = generateNegativePrompt();
+      const negativePrompt = generateNegativePrompt(''); // No user prompt for memory models
 
       console.log('Generated prompt:', prompt);
 
@@ -349,7 +349,7 @@ router.post('/:id/generate', async (req, res) => {
     }
 
     let prompt;
-    const negativePrompt = generateNegativePrompt();
+    const negativePrompt = generateNegativePrompt(''); // No user prompt for initial generation
 
     // Check if reference images are provided
     if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
@@ -660,7 +660,11 @@ router.post('/:id/generate-from-image', async (req, res) => {
       console.error('⚠️ Error enhancing with consistency, using base prompt:', error.message);
     }
 
-    const negativePrompt = generateNegativePrompt();
+    // Check if the generated prompt mentions messy/cluttered to inform negative prompt
+    const promptLower = prompt.toLowerCase();
+    const isMessyInPrompt = promptLower.includes('messy') || promptLower.includes('cluttered') || 
+                            promptLower.includes('unmade') || promptLower.includes('scattered');
+    const negativePrompt = generateNegativePrompt(isMessyInPrompt ? 'messy bedroom' : '');
 
     console.log('User uploaded image, generated prompt:', prompt.substring(0, 200) + '...');
 

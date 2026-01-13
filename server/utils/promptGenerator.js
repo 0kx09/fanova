@@ -193,10 +193,28 @@ function generatePrompt(modelData) {
     // User specified a custom setting
     promptParts.push(`in ${setting}`);
     promptParts.push(`${setting} background visible`);
+    
+    // Check for messy/cluttered keywords in setting
+    if (setting.includes('messy') || setting.includes('cluttered') || 
+        setting.includes('untidy') || setting.includes('disorganized')) {
+      promptParts.push('messy cluttered environment');
+      promptParts.push('unorganized setting');
+      promptParts.push('lived-in appearance');
+    }
 
     // Add context-appropriate details based on setting keywords
     if (setting.includes('bedroom') || setting.includes('room')) {
-      promptParts.push('casual home environment');
+      // Check for messy/cluttered keywords
+      if (setting.includes('messy') || setting.includes('cluttered') || 
+          setting.includes('untidy') || setting.includes('disorganized')) {
+        promptParts.push('messy bedroom');
+        promptParts.push('cluttered bedroom environment');
+        promptParts.push('unmade bed visible');
+        promptParts.push('clothes scattered on furniture');
+        promptParts.push('disorganized room');
+      } else {
+        promptParts.push('casual home environment');
+      }
     } else if (setting.includes('gym') || setting.includes('workout')) {
       promptParts.push('fitness environment');
     } else if (setting.includes('car')) {
@@ -262,9 +280,15 @@ function generatePrompt(modelData) {
 
 /**
  * Generate negative prompt to avoid unwanted elements for iPhone selfies
+ * Can optionally exclude clean/organized elements if messy is requested
  */
-function generateNegativePrompt() {
-  return [
+function generateNegativePrompt(userPrompt = '') {
+  const lowerPrompt = (userPrompt || '').toLowerCase();
+  const isMessyRequested = lowerPrompt.includes('messy') || lowerPrompt.includes('cluttered') || 
+                          lowerPrompt.includes('untidy') || lowerPrompt.includes('disorganized') ||
+                          lowerPrompt.includes('unmade') || lowerPrompt.includes('clothes scattered');
+  
+  const negativeParts = [
     // Quality issues
     'lowres', 'bad anatomy', 'bad hands', 'deformed fingers', 'missing fingers', 'extra fingers',
     'text', 'error', 'cropped', 'worst quality', 'low quality', 'jpeg artifacts',
@@ -300,7 +324,30 @@ function generateNegativePrompt() {
     'excessive noise', 'heavy grain', 'severe compression artifacts', 'pixelated',
     'overexposed', 'underexposed', 'harsh shadows', 'red eye',
     'too much noise', 'overwhelming grain', 'distracting artifacts'
-  ].join(', ');
+  ];
+
+  // If user requested messy/cluttered, avoid clean/organized elements
+  if (isMessyRequested) {
+    negativeParts.push(
+      'clean organized room',
+      'neat tidy bedroom',
+      'made bed',
+      'organized furniture',
+      'spotless clean',
+      'minimalist clean',
+      'perfectly organized'
+    );
+  } else {
+    // If user didn't request messy, avoid overly messy (but allow lived-in)
+    negativeParts.push(
+      'extremely dirty',
+      'filthy',
+      'trash everywhere',
+      'hoarder level mess'
+    );
+  }
+
+  return negativeParts.join(', ');
 }
 
 /**
@@ -530,7 +577,25 @@ function generateChatPrompt(modelData, userPrompt) {
   } else if (lowerPrompt.includes('bedroom') || lowerPrompt.includes('room')) {
     settingDesc = 'in bedroom';
     promptParts.push(settingDesc);
-    promptParts.push('casual home environment');
+    
+    // Check for messy/cluttered/untidy keywords - CRITICAL for user requests
+    if (lowerPrompt.includes('messy') || lowerPrompt.includes('cluttered') || 
+        lowerPrompt.includes('untidy') || lowerPrompt.includes('disorganized') ||
+        lowerPrompt.includes('dirty') || lowerPrompt.includes('unmade') ||
+        lowerPrompt.includes('clothes on') || lowerPrompt.includes('clothes scattered') ||
+        lowerPrompt.includes('unmade bed') || lowerPrompt.includes('unorganized')) {
+      promptParts.push('messy bedroom');
+      promptParts.push('cluttered bedroom environment');
+      promptParts.push('unmade bed visible in background');
+      promptParts.push('clothes scattered on furniture');
+      promptParts.push('disorganized room');
+      promptParts.push('lived-in messy bedroom');
+      promptParts.push('clothes on chair or floor');
+      promptParts.push('untidy bedroom setting');
+      promptParts.push('casual messy home environment');
+    } else {
+      promptParts.push('casual home environment');
+    }
     promptParts.push('soft indoor lighting');
   } else if (lowerPrompt.includes('outdoor')) {
     settingDesc = 'outdoors';

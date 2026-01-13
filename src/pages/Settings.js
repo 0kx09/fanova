@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { getUserProfile } from '../services/supabaseService';
 import { getPlanDetails } from '../services/pricingService';
 import { createCustomerPortalSession } from '../services/stripeService';
+import { getMyReferralLink, getReferralStats } from '../services/referralService';
 import './Settings.css';
 
 function Settings() {
@@ -24,9 +25,44 @@ function Settings() {
   const [subscriptionPlan, setSubscriptionPlan] = useState(null);
   const [subscriptionDetails, setSubscriptionDetails] = useState(null);
 
+  // Referral data
+  const [referralLink, setReferralLink] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralStats, setReferralStats] = useState(null);
+  const [loadingReferrals, setLoadingReferrals] = useState(false);
+
   useEffect(() => {
     loadUserData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === 'referrals') {
+      loadReferralData();
+    }
+  }, [activeTab]);
+
+  const loadReferralData = async () => {
+    try {
+      setLoadingReferrals(true);
+      const linkData = await getMyReferralLink();
+      setReferralLink(linkData.referralLink);
+      setReferralCode(linkData.referralCode);
+
+      const stats = await getReferralStats();
+      setReferralStats(stats);
+    } catch (error) {
+      console.error('Error loading referral data:', error);
+      setError('Failed to load referral information');
+    } finally {
+      setLoadingReferrals(false);
+    }
+  };
+
+  const copyReferralLink = () => {
+    navigator.clipboard.writeText(referralLink);
+    setSuccess('Referral link copied to clipboard!');
+    setTimeout(() => setSuccess(null), 3000);
+  };
 
   const loadUserData = async () => {
     try {
@@ -183,12 +219,18 @@ function Settings() {
         >
           Profile
         </button>
-        <button
-          className={`settings-tab ${activeTab === 'billing' ? 'active' : ''}`}
-          onClick={() => setActiveTab('billing')}
-        >
-          Billing & Subscription
-        </button>
+          <button
+            className={`settings-tab ${activeTab === 'billing' ? 'active' : ''}`}
+            onClick={() => setActiveTab('billing')}
+          >
+            Billing & Subscription
+          </button>
+          <button
+            className={`settings-tab ${activeTab === 'referrals' ? 'active' : ''}`}
+            onClick={() => setActiveTab('referrals')}
+          >
+            Referrals
+          </button>
       </div>
 
       {error && (
@@ -327,6 +369,60 @@ function Settings() {
                   View Plans
                 </button>
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'referrals' && (
+          <div className="settings-section">
+            <h2>Referral Program</h2>
+            <p className="section-description">Share your referral link and earn 20 credits for each person you refer!</p>
+
+            {loadingReferrals ? (
+              <div className="loading-state">Loading referral information...</div>
+            ) : (
+              <>
+                <div className="referral-card">
+                  <h3>Your Referral Link</h3>
+                  <div className="referral-link-container">
+                    <input
+                      type="text"
+                      readOnly
+                      value={referralLink}
+                      className="referral-link-input"
+                    />
+                    <button onClick={copyReferralLink} className="btn-secondary">
+                      Copy Link
+                    </button>
+                  </div>
+                  <p className="referral-code-display">Your Code: <strong>{referralCode}</strong></p>
+                </div>
+
+                {referralStats && (
+                  <div className="referral-stats">
+                    <h3>Your Referral Stats</h3>
+                    <div className="stats-grid">
+                      <div className="stat-card">
+                        <div className="stat-value">{referralStats.totalReferrals || 0}</div>
+                        <div className="stat-label">Total Referrals</div>
+                      </div>
+                      <div className="stat-card">
+                        <div className="stat-value">{referralStats.totalCreditsEarned || 0}</div>
+                        <div className="stat-label">Credits Earned</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="referral-info">
+                  <h4>How it works:</h4>
+                  <ul>
+                    <li>Share your referral link with friends</li>
+                    <li>When they sign up using your link, you both get 20 credits</li>
+                    <li>There's no limit to how many people you can refer!</li>
+                  </ul>
+                </div>
+              </>
             )}
           </div>
         )}

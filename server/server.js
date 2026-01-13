@@ -14,9 +14,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const modelsRouter = require('./routes/models');
 const stripeRouter = require('./routes/stripe');
 const adminRouter = require('./routes/admin');
+const referralsRouter = require('./routes/referrals');
 app.use('/api/models', modelsRouter);
 app.use('/api/stripe', stripeRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/referrals', referralsRouter);
 
 // Health check
 app.get('/health', (req, res) => {
