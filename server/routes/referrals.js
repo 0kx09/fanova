@@ -232,7 +232,7 @@ router.post('/process', async (req, res) => {
           id: userId,
           email: userEmail,
           credits: 50,
-          subscription_plan: 'base'
+          subscription_plan: null // No plan by default
         })
         .select('id, credits')
         .single();

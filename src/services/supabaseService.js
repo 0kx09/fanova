@@ -26,7 +26,7 @@ export const createModel = async (modelData) => {
           id: user.id,
           email: user.email || '',
           credits: 50,
-          subscription_plan: 'base'
+          subscription_plan: null // No plan by default
         }
       ])
       .select()

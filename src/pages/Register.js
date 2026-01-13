@@ -76,19 +76,43 @@ function Register() {
         // Registration successful
         console.log('User registered:', data.user);
 
-        // Process referral if code was provided (wait a moment for profile to be created)
+        // Note: Referral is processed by database trigger automatically
+        // The trigger reads the referral_code from user metadata and processes it
+        // We don't need to call the API endpoint here as the trigger handles it
+        // However, we can verify it worked after a delay
         if (formData.referralCode && formData.referralCode.trim()) {
-          // Wait a bit for the profile to be created by the trigger
+          // Wait a bit for the trigger to process, then verify
           setTimeout(async () => {
             try {
-              const { processReferral } = await import('../services/referralService');
-              const result = await processReferral(data.user.id, formData.referralCode.trim().toUpperCase());
-              console.log('Referral processed:', result);
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session) {
+                const { data: profile } = await supabase
+                  .from('profiles')
+                  .select('credits, referred_by')
+                  .eq('id', data.user.id)
+                  .single();
+                
+                if (profile) {
+                  console.log('Profile after registration:', {
+                    credits: profile.credits,
+                    referredBy: profile.referred_by,
+                    expectedCredits: 70 // 50 base + 20 referral
+                  });
+                  
+                  // If referral wasn't processed by trigger, try API as fallback
+                  if (profile.credits === 50 && !profile.referred_by) {
+                    console.log('Referral not processed by trigger, trying API fallback...');
+                    const { processReferral } = await import('../services/referralService');
+                    const result = await processReferral(data.user.id, formData.referralCode.trim().toUpperCase());
+                    console.log('Referral processed via API:', result);
+                  }
+                }
+              }
             } catch (refError) {
-              console.error('Error processing referral:', refError);
-              // Don't block registration if referral fails
+              console.error('Error verifying referral:', refError);
+              // Don't block registration if referral verification fails
             }
-          }, 1000);
+          }, 2000);
         }
 
         // Navigate to dashboard
