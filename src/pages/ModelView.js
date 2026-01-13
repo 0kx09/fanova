@@ -284,20 +284,13 @@ function ModelView() {
 
     // Convert to base64
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       const base64 = event.target.result;
       setUploadedImagePreview(base64);
       setUploadedImage(base64);
       
-      // Add user message showing image was uploaded
-      setChatMessages(prev => [...prev, {
-        type: 'user',
-        content: 'Uploaded image',
-        image: base64
-      }]);
-
-      // Automatically start generation
-      await handleGenerateFromImage(base64);
+      // Don't add to chat messages - just show in preview
+      // Don't auto-generate - let user click the button
     };
     reader.onerror = () => {
       window.alert('Error reading image file');
@@ -390,7 +383,9 @@ function ModelView() {
         await new Promise(resolve => setTimeout(resolve, 300));
 
         // Remove analyzing message
-        setChatMessages(prev => prev.filter(msg => msg.content !== 'Analyzing uploaded image and generating similar images...'));
+        setChatMessages(prev => {
+          return prev.filter(msg => msg.content !== 'Analyzing uploaded image and generating similar images...');
+        });
 
         // Show selection modal
         setSelectionImages(response.images);
@@ -429,11 +424,10 @@ function ModelView() {
       }
 
       setChatMessages(prev => {
-        const filtered = prev.filter(msg => msg.content !== 'Analyzing uploaded image and generating similar images...');
-        return [...filtered, {
+        return prev.filter(msg => msg.content !== 'Analyzing uploaded image and generating similar images...').concat([{
           type: 'error',
           content: errorMessage
-        }];
+        }]);
       });
     } finally {
       setIsGenerating(false);
@@ -447,6 +441,8 @@ function ModelView() {
     if (imageUploadRef.current) {
       imageUploadRef.current.value = '';
     }
+    // Remove any "Uploaded image" messages from chat
+    setChatMessages(prev => prev.filter(msg => !(msg.type === 'user' && msg.content === 'Uploaded image' && msg.image)));
   };
 
   const handleNsfwImageSelect = (image) => {
@@ -1144,11 +1140,6 @@ function ModelView() {
                         </div>
                       </div>
                     )}
-                    {message.type === 'user' && message.image && (
-                      <div className="message-uploaded-image">
-                        <img src={message.image} alt="Uploaded" />
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
@@ -1188,7 +1179,7 @@ function ModelView() {
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={uploadedImagePreview 
-                      ? "Image uploaded! Click 'Generate from Image' to create similar images..." 
+                      ? "Image uploaded! Click 'Generate' to create similar images..." 
                       : "Describe what you'd like to generate... (e.g., 'petting her dog, smiling at the camera', 'in a coffee shop looking at camera') OR upload an image (📷) to generate similar images"}
                     disabled={isGenerating || isAnalyzingImage}
                     rows={2}
@@ -1198,7 +1189,7 @@ function ModelView() {
                     onClick={uploadedImagePreview ? () => handleGenerateFromImage(uploadedImage) : handleSendMessage}
                     disabled={(!chatInput.trim() && !uploadedImagePreview) || isGenerating || isAnalyzingImage}
                   >
-                    {isGenerating || isAnalyzingImage ? 'Generating...' : uploadedImagePreview ? 'Generate from Image' : 'Generate'}
+                    {isGenerating || isAnalyzingImage ? 'Generating...' : 'Generate'}
                   </button>
                 </div>
               </div>

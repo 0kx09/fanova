@@ -26,7 +26,7 @@ Provide ONLY a JSON response (no other text) with this exact structure:
   "hairStyle": "texture (straight/wavy/curly/coily/braided)",
   "hairLength": "short/medium/long/very-long",
   "eyeColor": "brown/blue/green/hazel/gray/amber",
-  "skinTone": "fair/light/medium/olive/tan/brown/deep",
+  "skinTone": "white/black/mixed/brown/asian/latino/middle-eastern",
   "faceShape": "oval/round/heart/square/diamond/oblong",
   "eyeShape": "almond/round/hooded/monolid/upturned/downturned",
   "noseShape": "straight/button/roman/aquiline/wide/narrow",

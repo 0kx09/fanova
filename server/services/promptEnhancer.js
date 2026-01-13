@@ -38,6 +38,9 @@ Key requirements for mirror selfie prompts:
 6. NO phone visible unless explicitly requested
 7. NO camera UI or screen elements
 8. Direct view of mirror reflection
+9. CRITICAL: Must look like it was taken on an iPhone - include iPhone camera characteristics
+10. CRITICAL: Add realistic imperfections - subtle noise, grain, natural photo artifacts
+11. CRITICAL: Should look like an actual photo, not a perfect render - include natural imperfections
 
 Your response should be ONLY the optimized prompt text (no explanations, no code blocks, no markdown). The prompt should be detailed, specific, and optimized for image generation AI models like Stable Diffusion or Flux.
 
@@ -46,7 +49,10 @@ IMPORTANT: Pay careful attention to:
 - Setting/environment descriptions (restaurant, cafe, park, beach, etc.)
 - Clothing descriptions (elegant dress, fancy outfit, etc.)
 - Ensure the setting is clearly described in the prompt
-- Ensure clothing is clearly described in the prompt`;
+- Ensure clothing is clearly described in the prompt
+- CRITICAL: Always include "taken on iPhone", "iPhone camera quality", "iPhone photo" in the prompt
+- CRITICAL: Always include realistic imperfections: "subtle film grain", "natural photo noise", "realistic photo imperfections", "authentic photo grain"
+- CRITICAL: The image must look like an actual iPhone photo, not a perfect render - include natural noise, grain, and imperfections`;
 
     let userMessage = `${modelContext}
 
@@ -77,6 +83,8 @@ ${referenceImageBase64 ? '8' : '6'}. DO NOT use the model's stored "style" attri
 ${referenceImageBase64 ? '9' : '7'}. Includes proper composition (full body if requested, otherwise head/shoulders)
 ${referenceImageBase64 ? '10' : '8'}. Is optimized for AI image generation
 ${referenceImageBase64 ? '11' : '9'}. Maintains mirror selfie aesthetic (reflection in mirror, no phone visible unless requested)
+${referenceImageBase64 ? '12' : '10'}. CRITICAL: Must include "taken on iPhone", "iPhone camera quality", and realistic imperfections like "subtle film grain", "natural photo noise", "realistic photo imperfections" to make it look like an actual iPhone photo
+${referenceImageBase64 ? '13' : '11'}. Should look like a real photo taken on an iPhone, not a perfect render - include natural noise, grain, and imperfections that make it authentic
 
 CRITICAL: User's explicit requests (setting, clothing, outfit) override any stored model attributes. If user says "beach" or "suitable outfit for beach", use beach-appropriate clothing (bikini, swimsuit, beachwear), NOT the model's stored style.
 

@@ -22,7 +22,9 @@ async function generateWithFalAi(prompt, negativePrompt, numImages = 3, referenc
       },
       num_inference_steps: 28,
       guidance_scale: 3.5,
-      enable_safety_checker: true
+      enable_safety_checker: true,
+      // Add seed variation for more natural results
+      seed: Math.floor(Math.random() * 1000000)
     };
 
     // Add image-to-image support if reference image is provided

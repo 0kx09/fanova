@@ -173,13 +173,13 @@ function ModelAttributes() {
                   onChange={handleChange}
                 >
                   <option value="">Select...</option>
-                  <option value="fair">Fair</option>
-                  <option value="light">Light</option>
-                  <option value="medium">Medium</option>
-                  <option value="olive">Olive</option>
-                  <option value="tan">Tan</option>
+                  <option value="white">White</option>
+                  <option value="black">Black</option>
+                  <option value="mixed">Mixed</option>
                   <option value="brown">Brown</option>
-                  <option value="deep">Deep</option>
+                  <option value="asian">Asian</option>
+                  <option value="latino">Latino/Latina</option>
+                  <option value="middle-eastern">Middle Eastern</option>
                 </select>
               </div>
 

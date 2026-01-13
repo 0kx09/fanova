@@ -35,6 +35,8 @@ Key requirements:
 6. Orientation: Vertical 9:16 portrait orientation
 7. Quality: Ultra realistic, photorealistic, looks like real person
 8. Style: Instagram-ready, social media aesthetic
+9. CRITICAL: Must look like it was taken on an iPhone - include "taken on iPhone", "iPhone camera quality"
+10. CRITICAL: Add realistic imperfections - "subtle film grain", "natural photo noise", "realistic photo imperfections"
 
 Your response should be ONLY the optimized prompt text (no explanations, no code blocks, no markdown). The prompt should be detailed, specific, and optimized for image generation AI models like Stable Diffusion or Flux.`;
 
@@ -56,6 +58,9 @@ CRITICAL:
 - But apply the model's facial features, hair characteristics, and physical appearance
 - If nationality is specified, ensure the person looks like that nationality/ethnicity
 - The generated image should look like the model person in the uploaded image's scenario
+- MUST include "taken on iPhone", "iPhone camera quality", "iPhone photo" in the prompt
+- MUST include realistic imperfections: "subtle film grain", "natural photo noise", "realistic photo imperfections", "authentic photo grain"
+- Should look like an actual iPhone photo, not a perfect render - include natural noise and imperfections
 
 Return ONLY the prompt text, nothing else.`;
 

@@ -214,6 +214,29 @@ function generatePrompt(modelData) {
     promptParts.push('casual home environment');
   }
 
+  // iPhone-specific camera characteristics - CRITICAL for realism
+  promptParts.push('taken on iPhone');
+  promptParts.push('iPhone camera quality');
+  promptParts.push('iPhone photo');
+  promptParts.push('iPhone mirror selfie');
+  promptParts.push('iPhone camera sensor');
+  promptParts.push('iPhone photo processing');
+  promptParts.push('Apple iPhone camera characteristics');
+  
+  // Real photo imperfections and noise - CRITICAL for authenticity
+  promptParts.push('subtle film grain');
+  promptParts.push('natural photo noise');
+  promptParts.push('slight camera noise');
+  promptParts.push('realistic photo imperfections');
+  promptParts.push('authentic photo grain');
+  promptParts.push('natural image noise');
+  promptParts.push('realistic camera artifacts');
+  promptParts.push('slight compression artifacts');
+  promptParts.push('natural photo texture');
+  promptParts.push('realistic photo quality');
+  promptParts.push('imperfections that make it look real');
+  promptParts.push('authentic smartphone photo quality');
+  
   // Technical quality markers for mirror selfie
   promptParts.push('high quality photo');
   promptParts.push('crisp modern photo quality');
@@ -228,6 +251,8 @@ function generatePrompt(modelData) {
   promptParts.push('photorealistic');
   promptParts.push('looks like real person');
   promptParts.push('authentic candid moment');
+  promptParts.push('looks like actual photo taken on iPhone');
+  promptParts.push('realistic iPhone mirror selfie');
 
   // Join all parts with commas
   const fullPrompt = promptParts.join(', ');
@@ -263,16 +288,18 @@ function generateNegativePrompt() {
     'cartoon', 'anime', 'drawing', 'painting', 'CGI', '3D render',
     'black and white', 'grayscale', 'sepia',
 
-    // Unrealistic features
+    // Unrealistic features - but allow natural imperfections
     'perfect skin', 'airbrushed', 'overly smooth', 'plastic skin',
     'unnatural colors', 'oversaturated', 'HDR artifact', 'halo effect',
+    'too perfect', 'CGI', '3D render', 'computer generated',
 
     // Wrong perspective (unless explicitly requested)
     'through phone screen', 'looking at phone', 'phone camera view', 'camera preview',
 
-    // Technical issues
-    'noise', 'grain', 'compression artifacts', 'pixelated',
-    'overexposed', 'underexposed', 'harsh shadows', 'red eye'
+    // Technical issues - but allow natural/realistic noise and grain
+    'excessive noise', 'heavy grain', 'severe compression artifacts', 'pixelated',
+    'overexposed', 'underexposed', 'harsh shadows', 'red eye',
+    'too much noise', 'overwhelming grain', 'distracting artifacts'
   ].join(', ');
 }
 
@@ -636,6 +663,29 @@ function generateChatPrompt(modelData, userPrompt) {
   promptParts.push('head and shoulders visible');
   promptParts.push('face taking up 40% of frame');
 
+  // iPhone-specific camera characteristics - CRITICAL for realism
+  promptParts.push('taken on iPhone');
+  promptParts.push('iPhone camera quality');
+  promptParts.push('iPhone photo');
+  promptParts.push('iPhone mirror selfie');
+  promptParts.push('iPhone camera sensor');
+  promptParts.push('iPhone photo processing');
+  promptParts.push('Apple iPhone camera characteristics');
+  
+  // Real photo imperfections and noise - CRITICAL for authenticity
+  promptParts.push('subtle film grain');
+  promptParts.push('natural photo noise');
+  promptParts.push('slight camera noise');
+  promptParts.push('realistic photo imperfections');
+  promptParts.push('authentic photo grain');
+  promptParts.push('natural image noise');
+  promptParts.push('realistic camera artifacts');
+  promptParts.push('slight compression artifacts');
+  promptParts.push('natural photo texture');
+  promptParts.push('realistic photo quality');
+  promptParts.push('imperfections that make it look real');
+  promptParts.push('authentic smartphone photo quality');
+  
   // Technical quality markers for mirror selfie
   promptParts.push('high quality photo');
   promptParts.push('crisp modern photo quality');
@@ -648,6 +698,8 @@ function generateChatPrompt(modelData, userPrompt) {
   promptParts.push('photorealistic');
   promptParts.push('looks like real person');
   promptParts.push('authentic candid moment');
+  promptParts.push('looks like actual photo taken on iPhone');
+  promptParts.push('realistic iPhone mirror selfie');
 
   // Join all parts with commas
   const fullPrompt = promptParts.join(', ');
