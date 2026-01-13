@@ -205,25 +205,79 @@ router.post('/process', async (req, res) => {
       return res.status(400).json({ error: 'Cannot use your own referral code' });
     }
 
-    // Get current credits for both users
+    // Ensure new user profile exists (might not be created by trigger yet)
+    // Try to get the profile, if it doesn't exist, create it
+    let newUserProfile = null;
+    const { data: existingNewUserProfile, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id, credits')
+      .eq('id', userId)
+      .single();
+
+    if (profileCheckError || !existingNewUserProfile) {
+      // Profile doesn't exist, try to get user email from auth and create profile
+      let userEmail = '';
+      try {
+        const { data: { user: authUser }, error: authError } = await supabase.auth.admin.getUserById(userId);
+        if (!authError && authUser) {
+          userEmail = authUser.email || '';
+        }
+      } catch (authErr) {
+        console.warn('Could not fetch auth user email, using empty string:', authErr.message);
+      }
+
+      const { data: createdProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          email: userEmail,
+          credits: 50,
+          subscription_plan: 'base'
+        })
+        .select('id, credits')
+        .single();
+
+      if (createError) {
+        console.error('Error creating profile for new user:', createError);
+        // If it's a conflict (profile was just created by trigger), try fetching again
+        if (createError.code === '23505' || createError.code === 'PGRST116') {
+          // Wait a moment for trigger to complete, then retry
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { data: retryProfile, error: retryError } = await supabase
+            .from('profiles')
+            .select('id, credits')
+            .eq('id', userId)
+            .single();
+          if (retryProfile) {
+            newUserProfile = retryProfile;
+          } else {
+            console.error('Retry also failed:', retryError);
+            return res.status(500).json({ error: 'Failed to create or fetch user profile' });
+          }
+        } else {
+          return res.status(500).json({ error: 'Failed to create user profile' });
+        }
+      } else {
+        newUserProfile = createdProfile;
+      }
+    } else {
+      newUserProfile = existingNewUserProfile;
+    }
+
+    // Get current credits for referrer
     const { data: referrerProfileFull, error: refError } = await supabase
       .from('profiles')
       .select('credits')
       .eq('id', referrerProfile.id)
       .single();
 
-    const { data: newUserProfile, error: newUserError } = await supabase
-      .from('profiles')
-      .select('credits')
-      .eq('id', userId)
-      .single();
-
     if (refError || !referrerProfileFull) {
       return res.status(500).json({ error: 'Failed to fetch referrer profile' });
     }
 
-    if (newUserError || !newUserProfile) {
-      return res.status(500).json({ error: 'Failed to fetch new user profile' });
+    // newUserProfile should already be set from above, but verify
+    if (!newUserProfile) {
+      return res.status(500).json({ error: 'Failed to get new user profile' });
     }
 
     // Award credits to both users
