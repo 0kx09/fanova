@@ -84,7 +84,7 @@ function GenerationChoice() {
 
   return (
     <div className="generation-choice-container">
-      <div className="progress-bar">
+      <div className="progress-steps">
         <div className="progress-step completed">1. Model Info</div>
         <div className="progress-step completed">2. Attributes</div>
         <div className="progress-step active">3. Generation</div>

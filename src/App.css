@@ -126,8 +126,8 @@
   border-top: 1px solid var(--border-color);
 }
 
-/* Progress Bar */
-.progress-bar {
+/* Progress Steps Navigation */
+.progress-steps {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -186,7 +186,7 @@
     gap: 0;
   }
 
-  .progress-bar {
+  .progress-steps {
     flex-direction: column;
     gap: 8px;
   }

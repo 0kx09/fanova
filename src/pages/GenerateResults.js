@@ -191,7 +191,7 @@ function GenerateResults() {
 
   return (
     <div className="generate-results-container">
-      <div className="progress-bar">
+      <div className="progress-steps">
         <div className="progress-step completed">1. Model Info</div>
         <div className="progress-step completed">2. Attributes</div>
         <div className="progress-step completed">3. Generation</div>
@@ -205,8 +205,8 @@ function GenerateResults() {
             <p>Creating beautiful images just for you...</p>
             
             <div className="progress-bar-container">
-              <div 
-                className="progress-bar" 
+              <div
+                className="progress-bar-fill"
                 style={{ width: `${generationProgress}%` }}
               ></div>
             </div>

@@ -315,19 +315,29 @@ async function handleCheckoutCompleted(session) {
       .single();
 
     if (profileError) {
-      console.error('Error fetching user profile:', profileError);
+      console.error('❌ CRITICAL ERROR: Failed to fetch user profile');
+      console.error('User ID:', userId);
+      console.error('Profile Error:', JSON.stringify(profileError, null, 2));
+      return;
+    }
+
+    if (!currentProfile) {
+      console.error('❌ CRITICAL ERROR: No profile found for user ID:', userId);
       return;
     }
 
     const currentCredits = currentProfile?.credits || 0;
     const planDetails = getPlanCredits(planType);
-    
-    console.log('Updating user profile:', {
+
+    console.log('✅ Checkout completed - Allocating credits');
+    console.log('User Details:', {
       userId,
       planType,
       currentCredits,
       monthlyCredits: planDetails.monthlyCredits,
-      newCredits: currentCredits + planDetails.monthlyCredits
+      newCredits: currentCredits + planDetails.monthlyCredits,
+      subscriptionId,
+      subscriptionStatus: subscription.status
     });
 
     // Update subscription plan
@@ -343,11 +353,19 @@ async function handleCheckoutCompleted(session) {
       .eq('id', userId);
 
     if (updateError) {
-      console.error('Error updating user profile:', updateError);
+      console.error('❌ CRITICAL ERROR: Failed to update user profile');
+      console.error('Update Error:', JSON.stringify(updateError, null, 2));
+      console.error('Attempted update data:', {
+        planType,
+        subscriptionId,
+        creditsToAdd: planDetails.monthlyCredits,
+        newTotal: currentCredits + planDetails.monthlyCredits
+      });
       return;
     }
 
-    console.log('Successfully updated user profile with plan:', planType);
+    console.log('✅ Successfully updated user profile with plan:', planType);
+    console.log('✅ Credits allocated:', planDetails.monthlyCredits, '(Total:', currentCredits + planDetails.monthlyCredits, ')');
 
       // Record subscription history
       const { error: historyError } = await supabase
@@ -405,15 +423,23 @@ async function handleCheckoutCompleted(session) {
 async function handleSubscriptionUpdate(subscription) {
   try {
     const customerId = subscription.customer;
-    
+
     // Get user by Stripe customer ID
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, subscription_plan, credits')
       .eq('stripe_customer_id', customerId)
       .single();
 
-    if (!profile) return;
+    if (!profile) {
+      console.error('No profile found for customer:', customerId);
+      return;
+    }
+
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+      return;
+    }
 
     const priceId = subscription.items.data[0]?.price.id;
     let planType = 'base';
@@ -430,14 +456,80 @@ async function handleSubscriptionUpdate(subscription) {
       }
     }
 
-    // Update subscription plan
-    await supabase
+    console.log('Subscription update:', {
+      userId: profile.id,
+      oldPlan: profile.subscription_plan,
+      newPlan: planType,
+      currentCredits: profile.credits
+    });
+
+    // Get credits for the new plan
+    const planDetails = getPlanCredits(planType);
+    const currentCredits = profile.credits || 0;
+
+    // Only allocate credits if this is a new subscription or upgrade
+    // (subscription.status is 'active' or 'trialing')
+    const shouldAllocateCredits = subscription.status === 'active' || subscription.status === 'trialing';
+
+    let updateData = {
+      subscription_plan: planType,
+      stripe_subscription_id: subscription.id,
+      subscription_renewal_date: new Date(subscription.current_period_end * 1000).toISOString()
+    };
+
+    if (shouldAllocateCredits) {
+      updateData.credits = currentCredits + planDetails.monthlyCredits;
+      console.log('Allocating credits:', {
+        currentCredits,
+        monthlyCredits: planDetails.monthlyCredits,
+        newTotal: updateData.credits
+      });
+    }
+
+    // Update subscription plan and credits
+    const { error: updateError } = await supabase
       .from('profiles')
-      .update({
-        subscription_plan: planType,
-        stripe_subscription_id: subscription.id
-      })
+      .update(updateData)
       .eq('id', profile.id);
+
+    if (updateError) {
+      console.error('Error updating profile:', updateError);
+      return;
+    }
+
+    console.log('Successfully updated subscription for user:', profile.id);
+
+    // Record credit transaction if credits were allocated
+    if (shouldAllocateCredits) {
+      const { error: transactionError } = await supabase
+        .from('credit_transactions')
+        .insert({
+          user_id: profile.id,
+          transaction_type: 'subscription',
+          amount: planDetails.monthlyCredits,
+          description: `Monthly credit allocation for ${planType} plan`,
+          metadata: { plan: planType, monthly_credits: planDetails.monthlyCredits }
+        });
+
+      if (transactionError) {
+        console.error('Error recording credit transaction:', transactionError);
+      }
+
+      // Record subscription history
+      const { error: historyError } = await supabase
+        .from('subscription_history')
+        .insert({
+          user_id: profile.id,
+          plan_type: planType,
+          action: 'updated',
+          amount_paid: planDetails.price,
+          credits_allocated: planDetails.monthlyCredits
+        });
+
+      if (historyError) {
+        console.error('Error recording subscription history:', historyError);
+      }
+    }
   } catch (error) {
     console.error('Error handling subscription update:', error);
   }

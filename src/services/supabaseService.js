@@ -421,21 +421,60 @@ export const updateSubscriptionPlan = async (planType, action = 'upgraded') => {
     throw new Error('User not authenticated');
   }
 
+  // Import plan details
+  const { SUBSCRIPTION_PLANS } = await import('./pricingService');
+  const planDetails = SUBSCRIPTION_PLANS[planType];
+
+  if (!planDetails) {
+    throw new Error(`Invalid plan type: ${planType}`);
+  }
+
+  // Get current credits
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('credits')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError) {
+    throw new Error('Failed to fetch user profile');
+  }
+
+  const currentCredits = profile?.credits || 0;
+  const newCredits = currentCredits + planDetails.monthlyCredits;
+
   const now = new Date().toISOString();
   const renewalDate = new Date();
   renewalDate.setMonth(renewalDate.getMonth() + 1); // 1 month from now
 
-  // Update profile
+  // Update profile with new plan and credits
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
       subscription_plan: planType,
       subscription_start_date: now,
-      subscription_renewal_date: renewalDate.toISOString()
+      subscription_renewal_date: renewalDate.toISOString(),
+      credits: newCredits
     })
     .eq('id', user.id);
 
   if (updateError) throw updateError;
+
+  // Log credit transaction
+  const { error: transactionError } = await supabase
+    .from('credit_transactions')
+    .insert({
+      user_id: user.id,
+      transaction_type: 'subscription',
+      amount: planDetails.monthlyCredits,
+      description: `Monthly credit allocation for ${planDetails.name}`,
+      metadata: { plan: planType, action: action }
+    });
+
+  if (transactionError) {
+    console.error('Error logging credit transaction:', transactionError);
+    // Don't throw - subscription was already updated
+  }
 
   // Log subscription history
   const { error: historyError } = await supabase
@@ -444,8 +483,8 @@ export const updateSubscriptionPlan = async (planType, action = 'upgraded') => {
       user_id: user.id,
       plan_type: planType,
       action: action,
-      amount_paid: null, // Will be set by payment processor
-      credits_allocated: null // Will be set by trigger
+      amount_paid: planDetails.price,
+      credits_allocated: planDetails.monthlyCredits
     });
 
   if (historyError) {

@@ -54,24 +54,25 @@
 .progress-bar-container {
   width: 100%;
   max-width: 400px;
-  height: 10px;
+  height: 12px;
   background: var(--bg-primary);
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   margin-bottom: 16px;
   position: relative;
+  border: 1px solid var(--border-color);
 }
 
-.progress-bar {
+.progress-bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--primary-color), var(--primary-light));
-  border-radius: 10px;
+  border-radius: 12px;
   transition: width 0.3s ease;
   position: relative;
   overflow: hidden;
 }
 
-.progress-bar::after {
+.progress-bar-fill::after {
   content: '';
   position: absolute;
   top: 0;

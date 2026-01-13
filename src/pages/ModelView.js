@@ -925,8 +925,8 @@ function ModelView() {
                           <span>Generating your images...</span>
                         </div>
                         <div className="progress-bar-container">
-                          <div 
-                            className="progress-bar" 
+                          <div
+                            className="progress-bar-fill"
                             style={{ width: `${generationProgress}%` }}
                           ></div>
                         </div>

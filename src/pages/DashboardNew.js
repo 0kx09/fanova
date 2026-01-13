@@ -175,7 +175,9 @@ function DashboardNew() {
             ) : (
               <div className="models-grid">
                 {models.map((model) => {
+                  // Find selected image, or fall back to first generated image
                   const selectedImage = model.generated_images?.find(img => img.is_selected);
+                  const displayImage = selectedImage || (model.generated_images && model.generated_images.length > 0 ? model.generated_images[0] : null);
 
                   return (
                     <div
@@ -183,9 +185,9 @@ function DashboardNew() {
                       className="model-card"
                       onClick={() => handleModelClick(model)}
                     >
-                      {selectedImage ? (
+                      {displayImage ? (
                         <div className="model-image">
-                          <img src={selectedImage.image_url} alt={model.name} />
+                          <img src={displayImage.image_url} alt={model.name} />
                         </div>
                       ) : (
                         <div className="model-image placeholder">
