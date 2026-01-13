@@ -131,21 +131,34 @@ async function deductCredits(userId, amount, transactionType = 'generation', des
   // Get current credits
   const profile = await getUserProfile(userId);
   
+  console.log(`💳 Deducting ${amount} credits from user ${userId}. Current credits: ${profile.credits}`);
+  
   if (profile.credits < amount) {
-    throw new Error('Insufficient credits');
+    throw new Error(`Insufficient credits. Have ${profile.credits}, need ${amount}`);
   }
 
   const newCredits = profile.credits - amount;
 
   // Update credits
-  const { error: updateError } = await supabase
+  const { data, error: updateError } = await supabase
     .from('profiles')
     .update({ credits: newCredits })
-    .eq('id', userId);
+    .eq('id', userId)
+    .select('credits')
+    .single();
 
   if (updateError) {
+    console.error(`❌ Failed to update credits in database:`, updateError);
     throw new Error(`Failed to deduct credits: ${updateError.message}`);
   }
+
+  // Verify the update worked
+  if (data && data.credits !== newCredits) {
+    console.error(`⚠️ Credit update mismatch! Expected ${newCredits}, got ${data.credits}`);
+    throw new Error('Credit deduction verification failed');
+  }
+
+  console.log(`✅ Credits updated successfully. New balance: ${newCredits}`);
 
   // Log transaction
   const { error: transactionError } = await supabase
@@ -197,29 +210,47 @@ async function checkAndDeductForGeneration(userId, isNsfw = false, options = {})
       throw new Error('NSFW images require a subscription plan. Please subscribe to Essential or Ultimate plan.');
     }
     
+    if (!profile.subscription_plan) {
+      throw new Error('Subscription plan is required for image generation');
+    }
+    
     actualCost = calculateImageCost(profile.subscription_plan, isNsfw, options);
+    console.log(`💰 Calculated cost: ${actualCost} credits (plan: ${profile.subscription_plan}, NSFW: ${isNsfw}, batch: ${options.batch})`);
+    
+    if (actualCost <= 0) {
+      throw new Error(`Invalid cost calculated: ${actualCost}. This should not happen.`);
+    }
     
     // Check credits
     const creditCheck = await checkCredits(userId, actualCost);
     if (!creditCheck.hasCredits) {
       throw new Error(creditCheck.error);
     }
+    
+    console.log(`✅ Credit check passed. User has ${creditCheck.currentCredits} credits, cost is ${actualCost}`);
   }
 
   // Deduct credits (or skip if free)
   let remainingCredits = profile.credits;
   if (!isFree && actualCost > 0) {
-    remainingCredits = await deductCredits(
-      userId,
-      actualCost,
-      'generation',
-      `Image generation${isNsfw ? ' (NSFW)' : ''}${options.batch ? ' (Batch)' : ''}`,
-      {
-        plan: profile.subscription_plan,
-        isNsfw,
-        options
-      }
-    );
+    console.log(`💰 Deducting ${actualCost} credits from user ${userId} (plan: ${profile.subscription_plan}, NSFW: ${isNsfw}, batch: ${options.batch})`);
+    try {
+      remainingCredits = await deductCredits(
+        userId,
+        actualCost,
+        'generation',
+        `Image generation${isNsfw ? ' (NSFW)' : ''}${options.batch ? ' (Batch)' : ''}`,
+        {
+          plan: profile.subscription_plan,
+          isNsfw,
+          options
+        }
+      );
+      console.log(`✅ Credits deducted successfully. Remaining: ${remainingCredits}`);
+    } catch (deductError) {
+      console.error(`❌ Error deducting credits:`, deductError);
+      throw new Error(`Failed to deduct credits: ${deductError.message}`);
+    }
   } else if (isFree) {
     // Log free generation transaction
     const { error: transactionError } = await supabase
@@ -235,6 +266,16 @@ async function checkAndDeductForGeneration(userId, isNsfw = false, options = {})
     if (transactionError) {
       console.error('Error logging free generation transaction:', transactionError);
     }
+  }
+
+  // Final verification - if user has a plan and cost > 0, credits must have been deducted
+  if (!isFree && actualCost > 0 && profile.subscription_plan) {
+    const finalProfile = await getUserProfile(userId);
+    if (finalProfile.credits === profile.credits) {
+      console.error(`⚠️ WARNING: Credits were not deducted! Initial: ${profile.credits}, Final: ${finalProfile.credits}, Cost: ${actualCost}`);
+      throw new Error('Credit deduction failed - credits were not updated');
+    }
+    remainingCredits = finalProfile.credits; // Use the actual updated value
   }
 
   return {
