@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
+const { sendWelcomeEmail } = require('../services/emailService');
 
 /**
  * POST /api/auth/ensure-profile
@@ -80,6 +81,13 @@ router.post('/ensure-profile', async (req, res) => {
     }
 
     console.log('✅ Profile created successfully:', newProfile);
+
+    // Send welcome email (async, don't block response)
+    if (userEmail) {
+      sendWelcomeEmail(userEmail).catch(err => {
+        console.error('⚠️ Failed to send welcome email (non-blocking):', err);
+      });
+    }
 
     res.json({
       success: true,

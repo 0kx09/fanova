@@ -10,6 +10,7 @@ const { enhancePromptWithVisualConsistency } = require('../services/imageConsist
 const { generatePromptFromImage } = require('../services/imagePromptGenerator');
 const { buildLockedGenerationPrompt, getReferenceImages, getIdentityPacket } = require('../services/identityPacketService');
 const { generateSafePrompt, logFirewallAction } = require('../services/promptFirewall');
+const { sendFirstModelEmail } = require('../services/emailService');
 const supabase = require('../config/supabase');
 
 // In-memory storage for testing (no MongoDB)
@@ -468,6 +469,37 @@ router.post('/:id/generate', async (req, res) => {
     } catch (updateError) {
       console.error('Error updating generation count:', updateError);
       // Don't fail the request if this update fails
+    }
+
+    // Check if this is the user's first model and send congratulations email
+    try {
+      // Count how many models this user has (with generation_count > 0)
+      const { data: userModels, error: countError } = await supabase
+        .from('models')
+        .select('id, generation_count')
+        .eq('user_id', model.user_id)
+        .gt('generation_count', 0);
+
+      if (!countError && userModels && userModels.length === 1) {
+        // This is their first model with generated images!
+        console.log('🎉 First model detected! Sending congratulations email...');
+
+        // Get user email from profiles
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', model.user_id)
+          .single();
+
+        if (profile && profile.email) {
+          sendFirstModelEmail(profile.email, '', id, model.name).catch(err => {
+            console.error('⚠️ Failed to send first model email (non-blocking):', err);
+          });
+        }
+      }
+    } catch (emailCheckError) {
+      console.error('⚠️ Error checking for first model email:', emailCheckError);
+      // Don't fail the request if this check fails
     }
 
     res.json({

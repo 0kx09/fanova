@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const supabase = require('../config/supabase');
+const { sendSubscriptionConfirmationEmail } = require('../services/emailService');
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.warn('⚠️  STRIPE_SECRET_KEY not found in environment variables');
@@ -464,6 +465,19 @@ async function handleCheckoutCompleted(session) {
       monthly_credits_allocated: updatedProfile.monthly_credits_allocated,
       stripe_subscription_id: updatedProfile.stripe_subscription_id
     });
+
+    // Send subscription confirmation email (async, don't block)
+    if (updatedProfile.email) {
+      const planName = planType.charAt(0).toUpperCase() + planType.slice(1); // Capitalize first letter
+      sendSubscriptionConfirmationEmail(
+        updatedProfile.email,
+        '',
+        planName,
+        planDetails.monthlyCredits
+      ).catch(err => {
+        console.error('⚠️ Failed to send subscription confirmation email (non-blocking):', err);
+      });
+    }
 
     // Record subscription history
     try {
