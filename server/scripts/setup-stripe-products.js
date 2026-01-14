@@ -20,6 +20,7 @@ const PRODUCTS = [
     description: 'Perfect for regular creators. Generate up to 250 images per month.',
     plan_type: 'essential',
     price: 19.99,
+    currency: 'gbp',
     credits: 250,
     features: [
       '250 monthly credits',
@@ -34,6 +35,7 @@ const PRODUCTS = [
     description: 'For power users. Generate up to 500 images per month with NSFW access.',
     plan_type: 'ultimate',
     price: 29.99,
+    currency: 'gbp',
     credits: 500,
     trial_days: 1,
     features: [
@@ -96,8 +98,8 @@ async function createProducts() {
       // Create price
       const priceData = {
         product: product.id,
-        unit_amount: Math.round(productDef.price * 100), // Convert to cents
-        currency: 'usd',
+        unit_amount: Math.round(productDef.price * 100), // Convert to cents/pence
+        currency: productDef.currency || 'gbp',
         recurring: {
           interval: 'month'
         },
@@ -115,7 +117,8 @@ async function createProducts() {
       const price = await stripe.prices.create(priceData);
 
       console.log(`   ✅ Price created: ${price.id}`);
-      console.log(`   💰 Amount: $${(price.unit_amount / 100).toFixed(2)}/month`);
+      const currencySymbol = (productDef.currency || 'gbp').toUpperCase() === 'GBP' ? '£' : '$';
+      console.log(`   💰 Amount: ${currencySymbol}${(price.unit_amount / 100).toFixed(2)}/month`);
 
       // Save to database
       console.log(`   💾 Saving to database...`);
@@ -127,7 +130,7 @@ async function createProducts() {
           product_id: product.id,
           plan_type: productDef.plan_type,
           amount: productDef.price,
-          currency: 'usd',
+          currency: productDef.currency || 'gbp',
           monthly_credits: productDef.credits
         }, {
           onConflict: 'price_id'
@@ -144,6 +147,7 @@ async function createProducts() {
         product_id: product.id,
         price_id: price.id,
         amount: productDef.price,
+        currency: productDef.currency || 'gbp',
         credits: productDef.credits
       });
 
@@ -163,10 +167,11 @@ async function createProducts() {
     console.log('📋 Created Products Summary:\n');
 
     createdProducts.forEach(p => {
+      const currencySymbol = (p.currency || 'gbp').toUpperCase() === 'GBP' ? '£' : '$';
       console.log(`${p.plan_type.toUpperCase()} PLAN:`);
       console.log(`  Product ID: ${p.product_id}`);
       console.log(`  Price ID:   ${p.price_id}`);
-      console.log(`  Amount:     $${p.amount}/month`);
+      console.log(`  Amount:     ${currencySymbol}${p.amount}/month`);
       console.log(`  Credits:    ${p.credits}`);
       console.log('');
     });
