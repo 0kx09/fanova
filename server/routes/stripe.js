@@ -630,16 +630,16 @@ async function handleSubscriptionDeleted(subscription) {
  */
 function getPlanCredits(planType) {
   const plans = {
-    base: { monthlyCredits: 50, price: 9.99 },
+    base: { monthlyCredits: 10, price: 0 },
     essential: { monthlyCredits: 250, price: 19.99 },
     ultimate: { monthlyCredits: 500, price: 29.99 }
   };
-  
+
   if (!planType || !plans[planType]) {
-    console.warn(`⚠️ Invalid plan type: ${planType}, defaulting to base`);
-    return plans.base;
+    console.warn(`⚠️ Invalid plan type: ${planType}, returning null`);
+    return null;
   }
-  
+
   return plans[planType];
 }
 

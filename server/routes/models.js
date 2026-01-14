@@ -445,11 +445,12 @@ router.post('/:id/generate', async (req, res) => {
           gender: model.gender || 'person'
         };
 
-        // Use the first 2-4 images as reference images
-        const referenceImageUrls = imageUrls.slice(0, Math.min(4, imageUrls.length));
+        // CRITICAL: Use the ORIGINAL user-uploaded reference images, NOT generated images
+        // This ensures chat generation uses the same identity anchor as initial generation
+        const referenceImageUrls = referenceImages.slice(0, Math.min(4, referenceImages.length));
 
         await createIdentityPacket(id, modelData, referenceImageUrls);
-        console.log('✅ Identity packet created with generated images as references');
+        console.log('✅ Identity packet created with ORIGINAL user-uploaded reference images');
       } catch (identityError) {
         console.error('⚠️ Error creating identity packet:', identityError.message);
         // Don't fail the request if identity packet creation fails

@@ -138,7 +138,10 @@ async function getIdentityPacket(modelId) {
   }
 
   // Legacy support: If no identity packet, create one from model data
-  console.log(`⚠️ Model ${modelId} has no identity packet, creating one...`);
+  console.warn(`⚠️⚠️⚠️ WARNING: Model ${modelId} has no identity packet!`);
+  console.warn(`This model was created before identity locking was implemented.`);
+  console.warn(`Creating identity packet from existing generated images - identity may not be accurate.`);
+  console.warn(`For best results, the user should re-upload original reference photos.`);
 
   const modelData = {
     age: model.age,
@@ -147,7 +150,9 @@ async function getIdentityPacket(modelId) {
     facialFeatures: model.facial_features || {}
   };
 
-  // Get reference images from generated_images table (first few images)
+  // LEGACY FALLBACK: Get reference images from generated_images table (first few images)
+  // This is NOT IDEAL - generated images may have drifted from the original identity
+  // Best practice is to use original user-uploaded reference images
   const { data: generatedImages } = await supabase
     .from('generated_images')
     .select('image_url')
@@ -157,6 +162,12 @@ async function getIdentityPacket(modelId) {
 
   const referenceImageUrls = (generatedImages || []).map(img => img.image_url);
 
+  if (referenceImageUrls.length === 0) {
+    console.error(`❌ No generated images found for model ${modelId} - cannot create identity packet`);
+    return null;
+  }
+
+  console.log(`📸 Using ${referenceImageUrls.length} generated images as fallback reference (NOT RECOMMENDED)`);
   return await createIdentityPacket(modelId, modelData, referenceImageUrls);
 }
 

@@ -41,6 +41,7 @@ function ModelView() {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [savingImageIndex, setSavingImageIndex] = useState(null);
   const chatMessagesRef = useRef(null);
   const nsfwChatMessagesRef = useRef(null);
   const progressIntervalRef = useRef(null);
@@ -1284,8 +1285,10 @@ function ModelView() {
                                 <div key={i} className="nsfw-result-image">
                                   <img src={imgUrl} alt={`Generated ${i + 1}`} />
                                   <button
-                                    className="save-nsfw-btn"
+                                    className={`save-nsfw-btn ${savingImageIndex === i ? 'saving' : ''}`}
                                     onClick={async () => {
+                                      if (savingImageIndex !== null) return;
+                                      setSavingImageIndex(i);
                                       try {
                                         const { error } = await supabase
                                           .from('generated_images')
@@ -1299,15 +1302,21 @@ function ModelView() {
                                         await loadModel();
                                         setNsfwChatMessages(prev => [...prev, {
                                           type: 'system',
-                                          content: 'Image saved to gallery!'
+                                          content: '✓ Image saved to gallery!'
                                         }]);
                                       } catch (error) {
                                         console.error('Error saving NSFW image:', error);
-                                        alert('Failed to save image');
+                                        setNsfwChatMessages(prev => [...prev, {
+                                          type: 'error',
+                                          content: 'Failed to save image. Please try again.'
+                                        }]);
+                                      } finally {
+                                        setSavingImageIndex(null);
                                       }
                                     }}
+                                    disabled={savingImageIndex !== null}
                                   >
-                                    Save to Gallery
+                                    {savingImageIndex === i ? 'Saving...' : 'Save to Gallery'}
                                   </button>
                                 </div>
                               ))}
