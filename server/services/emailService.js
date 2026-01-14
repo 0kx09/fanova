@@ -568,8 +568,215 @@ async function sendSubscriptionConfirmationEmail(userEmail, userName = '', planN
   }
 }
 
+/**
+ * Send account deletion apology email
+ * For users whose accounts were deleted due to incorrect billing signup
+ * @param {string} userEmail - User's email address
+ * @param {string} userName - User's name (optional)
+ */
+async function sendAccountDeletionApologyEmail(userEmail, userName = '') {
+  // Validate API key before attempting to send
+  if (!RESEND_API_KEY) {
+    console.error('❌ Cannot send account deletion email: RESEND_API_KEY not configured');
+    return { success: false, error: { message: 'Email service not configured' } };
+  }
+
+  // Validate email address
+  if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
+    console.error('❌ Invalid email address:', userEmail);
+    return { success: false, error: { message: 'Invalid email address' } };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [userEmail],
+      subject: 'Important: Account Update Required - Fanova',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+              line-height: 1.6;
+              color: #18181b;
+              background-color: #fafafa;
+              margin: 0;
+              padding: 0;
+            }
+            .container {
+              max-width: 600px;
+              margin: 40px auto;
+              background: white;
+              border: 1px solid #e4e4e7;
+              border-radius: 12px;
+              overflow: hidden;
+            }
+            .header {
+              background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+              padding: 40px 32px;
+              text-align: center;
+            }
+            .header h1 {
+              color: white;
+              margin: 0;
+              font-size: 28px;
+              font-weight: 600;
+            }
+            .content {
+              padding: 40px 32px;
+            }
+            .content h2 {
+              color: #18181b;
+              font-size: 20px;
+              font-weight: 600;
+              margin: 0 0 16px 0;
+            }
+            .content p {
+              color: #71717a;
+              margin: 0 0 16px 0;
+              font-size: 15px;
+            }
+            .important-box {
+              background: #fef3c7;
+              border-left: 4px solid #f59e0b;
+              border-radius: 8px;
+              padding: 20px 24px;
+              margin: 24px 0;
+            }
+            .important-box p {
+              color: #78350f;
+              margin: 8px 0;
+              font-weight: 500;
+            }
+            .important-box p:first-child {
+              margin-top: 0;
+            }
+            .important-box p:last-child {
+              margin-bottom: 0;
+            }
+            .assurance-box {
+              background: #dcfce7;
+              border-left: 4px solid #22c55e;
+              border-radius: 8px;
+              padding: 20px 24px;
+              margin: 24px 0;
+            }
+            .assurance-box p {
+              color: #166534;
+              margin: 8px 0;
+              font-weight: 500;
+            }
+            .assurance-box p:first-child {
+              margin-top: 0;
+            }
+            .assurance-box p:last-child {
+              margin-bottom: 0;
+            }
+            .cta-button {
+              display: inline-block;
+              background: #667eea;
+              color: white;
+              text-decoration: none;
+              padding: 14px 28px;
+              border-radius: 8px;
+              font-weight: 500;
+              margin: 24px 0;
+              font-size: 15px;
+            }
+            .footer {
+              padding: 24px 32px;
+              background: #fafafa;
+              border-top: 1px solid #e4e4e7;
+              text-align: center;
+            }
+            .footer p {
+              color: #a1a1aa;
+              font-size: 13px;
+              margin: 0;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Important Account Notice</h1>
+            </div>
+            <div class="content">
+              <h2>Dear${userName ? ` ${userName}` : ' valued customer'},</h2>
+              <p>
+                We sincerely apologize for any inconvenience this may cause. We are writing to inform you about an issue with your recent account registration.
+              </p>
+
+              <div class="important-box">
+                <p><strong>What happened:</strong></p>
+                <p>
+                  Your account was created with incorrect billing information during the signup process. As a result, we have had to delete your account to maintain the integrity of our billing system.
+                </p>
+              </div>
+
+              <div class="assurance-box">
+                <p><strong>Important - Please read:</strong></p>
+                <p>✓ You have NOT been charged</p>
+                <p>✓ No payment details have been stored</p>
+                <p>✓ Your data has been securely removed from our systems</p>
+              </div>
+
+              <p>
+                <strong>What you need to do:</strong>
+              </p>
+              <p>
+                To continue using Fanova, please create a new account with the correct information. We've made improvements to our signup process to ensure this doesn't happen again.
+              </p>
+
+              <center>
+                <a href="${FRONTEND_URL}/register" class="cta-button">Create New Account</a>
+              </center>
+
+              <p>
+                We understand this is frustrating, and we genuinely apologize for the disruption. Our team is working to prevent similar issues in the future.
+              </p>
+
+              <p style="margin-top: 32px; font-size: 14px;">
+                If you have any questions or concerns, please don't hesitate to contact our support team. We're here to help make this right.
+              </p>
+
+              <p style="margin-top: 24px; font-size: 14px; color: #a1a1aa;">
+                Thank you for your understanding and patience.
+              </p>
+            </div>
+            <div class="footer">
+              <p>
+                © ${new Date().getFullYear()} Fanova. All rights reserved.<br>
+                <a href="${FRONTEND_URL}" style="color: #667eea; text-decoration: none;">Visit Fanova</a> |
+                <a href="mailto:support@usefanova.com" style="color: #667eea; text-decoration: none;">Contact Support</a>
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error('❌ Error sending account deletion apology email:', error);
+      return { success: false, error };
+    }
+
+    console.log('✅ Account deletion apology email sent successfully:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('❌ Exception sending account deletion apology email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
   sendWelcomeEmail,
   sendFirstModelEmail,
-  sendSubscriptionConfirmationEmail
+  sendSubscriptionConfirmationEmail,
+  sendAccountDeletionApologyEmail
 };
