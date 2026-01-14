@@ -63,7 +63,7 @@ router.post('/ensure-profile', async (req, res) => {
         {
           id: userId,
           email: userEmail || '',
-          credits: 50,
+          credits: 0,
           subscription_plan: null,
           monthly_credits_allocated: 0
         }

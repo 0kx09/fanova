@@ -231,7 +231,7 @@ router.post('/process', async (req, res) => {
         .insert({
           id: userId,
           email: userEmail,
-          credits: 50,
+          credits: 0,
           subscription_plan: null // No plan by default
         })
         .select('id, credits')
