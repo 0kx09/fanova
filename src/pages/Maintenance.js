@@ -53,18 +53,18 @@ function Maintenance() {
 
           {/* Headline */}
           <h1 className="maintenance-modern-title">
-            We are currently improving our systems.
+            Temporarily Unavailable Due to Billing Issues
           </h1>
 
           {/* Body text */}
           <p className="maintenance-modern-description">
-            We're performing scheduled maintenance to ensure the best experience for you. We apologize for the inconvenience and expect to be back shortly.
+            We're experiencing some billing system issues and have temporarily taken the site offline to resolve them. We sincerely apologize for the inconvenience. Rest assured that all credits and subscriptions will be fully credited back once we're back online. We expect to be back shortly.
           </p>
 
           {/* Status badge */}
           <div className="maintenance-badge-container">
             <span className="maintenance-status-badge">
-              Status: Maintenance in progress
+              Status: Resolving billing issues
             </span>
           </div>
 

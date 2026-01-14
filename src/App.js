@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
@@ -16,14 +16,40 @@ import PaymentSuccess from './pages/PaymentSuccess';
 import AdminLogin from './pages/AdminLogin';
 import AdminPanel from './pages/AdminPanel';
 import Maintenance from './pages/Maintenance';
+import { MAINTENANCE_MODE, hasAdminBypass } from './config/maintenance';
 import './App.css';
+
+// Wrapper component to handle maintenance mode redirect
+function MaintenanceGuard({ children }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Check if maintenance mode is enabled
+    if (MAINTENANCE_MODE) {
+      // Allow access to maintenance page itself
+      if (location.pathname === '/maintenance') {
+        return;
+      }
+
+      // Check if user has admin bypass
+      if (!hasAdminBypass()) {
+        // Redirect to maintenance page
+        navigate('/maintenance');
+      }
+    }
+  }, [navigate, location.pathname]);
+
+  return children;
+}
 
 function App() {
   return (
     <Router>
       <div className="App">
+        <MaintenanceGuard>
           <Routes>
-            {/* Maintenance page */}
+            {/* Maintenance page - always accessible */}
             <Route path="/maintenance" element={<Maintenance />} />
 
             {/* All other routes */}
@@ -43,8 +69,9 @@ function App() {
             <Route path="/admin" element={<AdminPanel />} />
           </Routes>
 
-          {/* Discord Button */}
-          <a
+          {/* Discord Button - hide in maintenance mode unless admin */}
+          {(!MAINTENANCE_MODE || hasAdminBypass()) && (
+            <a
               href="https://discord.gg/fanova"
               target="_blank"
               rel="noopener noreferrer"
@@ -52,6 +79,8 @@ function App() {
             >
               Join Discord
             </a>
+          )}
+        </MaintenanceGuard>
       </div>
     </Router>
   );
