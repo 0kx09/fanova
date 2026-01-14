@@ -132,7 +132,9 @@ function Subscription() {
               <div className="plan-credits">
                 <div className="credits-amount">{plan.monthlyCredits}</div>
                 <div className="credits-label">credits/month</div>
-                <div className="credits-per-pound">{creditsPerPound} credits/£</div>
+                {plan.price > 0 && (
+                  <div className="credits-per-pound">{creditsPerPound} credits/£</div>
+                )}
               </div>
 
               <ul className="plan-features">

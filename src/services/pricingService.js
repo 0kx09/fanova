@@ -7,14 +7,14 @@
 export const SUBSCRIPTION_PLANS = {
   base: {
     name: 'Base Plan',
-    price: 9.99,
+    price: 0,
     currency: 'GBP',
-    monthlyCredits: 50,
+    monthlyCredits: 10,
     nsfwCost: null, // Not available on base plan
     hasWatermark: true,
     support: 'Standard',
     generationSpeed: 'Standard',
-    features: ['Basic AI model creation', 'Watermarked images', 'Standard generation speed', '5 SFW images per month']
+    features: ['Free forever', 'Basic AI model creation', 'Watermarked images', 'Standard generation speed', '1 SFW image per month (10 credits)']
   },
   essential: {
     name: 'Essential Plan',
@@ -178,23 +178,29 @@ export const formatPrice = (price, currency = 'GBP') => {
 /**
  * Calculate credits per pound for a plan
  * @param {string} planType - Plan type
- * @returns {number} - Credits per pound
+ * @returns {number} - Credits per pound (Infinity for free plans)
  */
 export const getCreditsPerPound = (planType) => {
   const plan = SUBSCRIPTION_PLANS[planType];
   if (!plan) return 0;
+  if (plan.price === 0) return Infinity; // Free plans have infinite value
   return Math.round((plan.monthlyCredits / plan.price) * 100) / 100;
 };
 
 /**
  * Get best value plan (most credits per pound)
+ * Excludes free plans from calculation
  * @returns {string} - Plan type with best value
  */
 export const getBestValuePlan = () => {
-  let bestPlan = 'base';
+  let bestPlan = 'essential';
   let bestValue = 0;
 
   Object.keys(SUBSCRIPTION_PLANS).forEach(planType => {
+    const plan = SUBSCRIPTION_PLANS[planType];
+    // Skip free plans
+    if (plan.price === 0) return;
+
     const value = getCreditsPerPound(planType);
     if (value > bestValue) {
       bestValue = value;
