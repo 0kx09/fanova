@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getSessionStatus, processPaymentCompletion } from '../services/stripeService';
 import { getUserProfile } from '../services/supabaseService';
@@ -12,57 +12,11 @@ function PaymentSuccess() {
   const [processing, setProcessing] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const sessionId = searchParams.get('session_id');
-  const modelId = searchParams.get('modelId');
 
   const MAX_RETRIES = 3;
   const RETRY_DELAY = 2000; // 2 seconds
 
-  useEffect(() => {
-    if (sessionId) {
-      processPayment();
-    } else {
-      setError('No session ID found');
-      setStatus('error');
-      setProcessing(false);
-    }
-  }, [sessionId]);
-
-  const processPayment = async () => {
-    try {
-      console.log('🔄 Starting payment processing for session:', sessionId);
-      
-      // Get session status
-      const sessionData = await getSessionStatus(sessionId);
-      console.log('📋 Session status:', sessionData);
-      
-      setStatus(sessionData.status);
-
-      if (sessionData.status !== 'complete') {
-        if (sessionData.status === 'open') {
-          // Session still open, redirect back
-          navigate('/generate-results');
-          return;
-        }
-        setError(`Payment session is ${sessionData.status}. Please try again.`);
-        setProcessing(false);
-        return;
-      }
-
-      console.log('✅ Payment session is complete');
-      console.log('📊 Subscription:', sessionData.subscription);
-      console.log('📝 Metadata:', sessionData.metadata);
-
-      // Process payment immediately (don't wait for webhook)
-      await processPaymentWithRetry(sessionData);
-
-    } catch (err) {
-      console.error('❌ Error processing payment:', err);
-      setError(err.message || 'Failed to process payment. Please contact support.');
-      setProcessing(false);
-    }
-  };
-
-  const processPaymentWithRetry = async (sessionData, attempt = 0) => {
+  const processPaymentWithRetry = useCallback(async (sessionData, attempt = 0) => {
     try {
       console.log(`🔄 Processing payment (attempt ${attempt + 1}/${MAX_RETRIES + 1})...`);
 
@@ -119,7 +73,52 @@ function PaymentSuccess() {
         setProcessing(false);
       }
     }
-  };
+  }, [sessionId, navigate, MAX_RETRIES, RETRY_DELAY]);
+
+  const processPayment = useCallback(async () => {
+    try {
+      console.log('🔄 Starting payment processing for session:', sessionId);
+
+      // Get session status
+      const sessionData = await getSessionStatus(sessionId);
+      console.log('📋 Session status:', sessionData);
+
+      setStatus(sessionData.status);
+
+      if (sessionData.status !== 'complete') {
+        if (sessionData.status === 'open') {
+          // Session still open, redirect back
+          navigate('/generate-results');
+          return;
+        }
+        setError(`Payment session is ${sessionData.status}. Please try again.`);
+        setProcessing(false);
+        return;
+      }
+
+      console.log('✅ Payment session is complete');
+      console.log('📊 Subscription:', sessionData.subscription);
+      console.log('📝 Metadata:', sessionData.metadata);
+
+      // Process payment immediately (don't wait for webhook)
+      await processPaymentWithRetry(sessionData);
+
+    } catch (err) {
+      console.error('❌ Error processing payment:', err);
+      setError(err.message || 'Failed to process payment. Please contact support.');
+      setProcessing(false);
+    }
+  }, [sessionId, navigate, processPaymentWithRetry]);
+
+  useEffect(() => {
+    if (sessionId) {
+      processPayment();
+    } else {
+      setError('No session ID found');
+      setStatus('error');
+      setProcessing(false);
+    }
+  }, [sessionId, processPayment]);
 
   if (status === 'loading' || processing) {
     return (

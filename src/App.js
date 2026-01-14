@@ -37,6 +37,16 @@ function App() {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Routes>
+
+        {/* Discord Button */}
+        <a
+          href="https://discord.gg/fanova"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="discord-button"
+        >
+          Join Discord
+        </a>
       </div>
     </Router>
   );

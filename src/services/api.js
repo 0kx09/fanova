@@ -4,7 +4,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api
 const getUserId = () => {
   let userId = localStorage.getItem('userId');
   if (!userId) {
-    userId = 'user_' + Math.random().toString(36).substr(2, 9);
+    userId = 'user_' + Math.random().toString(36).substring(2, 11);
     localStorage.setItem('userId', userId);
   }
   return userId;

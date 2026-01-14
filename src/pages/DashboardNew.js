@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getUserModels, getUserProfile } from '../services/supabaseService';
@@ -16,9 +16,39 @@ function DashboardNew() {
   const [subscriptionPlan, setSubscriptionPlan] = useState(null);
   const [showRecharge, setShowRecharge] = useState(false);
 
+  const loadModels = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      const userModels = await getUserModels();
+      setModels(userModels || []);
+
+      // Load user profile with credits and subscription
+      try {
+        const profile = await getUserProfile();
+        setCredits(profile.credits);
+        setSubscriptionPlan(profile.subscription_plan || null); // null for no plan
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setCredits(0); // Default fallback - zero credits
+        setSubscriptionPlan(null); // No plan
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading models:', error);
+      setLoading(false);
+    }
+  }, [navigate]);
+
   useEffect(() => {
     loadModels();
-  }, []);
+  }, [loadModels]);
 
   // Separate effect to refresh profile if no plan (for webhook delays)
   useEffect(() => {
@@ -39,36 +69,6 @@ function DashboardNew() {
       return () => clearInterval(refreshInterval);
     }
   }, [subscriptionPlan]);
-
-  const loadModels = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      const userModels = await getUserModels();
-      setModels(userModels || []);
-      
-      // Load user profile with credits and subscription
-      try {
-        const profile = await getUserProfile();
-        setCredits(profile.credits);
-        setSubscriptionPlan(profile.subscription_plan || null); // null for no plan
-      } catch (error) {
-        console.error('Error loading profile:', error);
-        setCredits(0); // Default fallback - zero credits
-        setSubscriptionPlan(null); // No plan
-      }
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading models:', error);
-      setLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

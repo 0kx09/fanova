@@ -172,6 +172,7 @@ function GenerateResults() {
         clearInterval(progressIntervalRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
@@ -231,16 +232,6 @@ function GenerateResults() {
     setTimeout(() => {
       setGenerating(false);
     }, 3000);
-  };
-
-  const handleCreateNew = () => {
-    // Clear all stored data
-    localStorage.removeItem('modelInfo');
-    localStorage.removeItem('modelAttributes');
-    localStorage.removeItem('generationMethod');
-    localStorage.removeItem('facialFeatures');
-    localStorage.removeItem('currentModelId');
-    navigate('/model-info');
   };
 
   return (

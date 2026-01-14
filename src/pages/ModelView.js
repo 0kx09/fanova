@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getModel, deleteImage, getUserProfile } from '../services/supabaseService';
 import { checkCreditsForGeneration } from '../services/imageGenerationService';
-import { getPlanDetails } from '../services/pricingService';
 import { generateModelImagesFromChat, generateImagesFromUploadedImage } from '../services/api';
 import { generateNSFWImage, prepareImageForWavespeed } from '../services/wavespeedService';
 import './ModelView.css';
@@ -32,7 +31,6 @@ function ModelView() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [isSavingImage, setIsSavingImage] = useState(false);
   const [credits, setCredits] = useState(null);
-  const [subscriptionPlan, setSubscriptionPlan] = useState('base');
   const [creditCost, setCreditCost] = useState(null);
   const [nsfwEnabled, setNsfwEnabled] = useState(false);
   const [nsfwChatInput, setNsfwChatInput] = useState('');
@@ -49,27 +47,7 @@ function ModelView() {
   const canvasRef = useRef(null);
   const imageUploadRef = useRef(null);
 
-  useEffect(() => {
-    loadModel();
-  }, [modelId]);
-
-  // Auto-scroll to bottom when new messages are added
-  useEffect(() => {
-    if (chatMessagesRef.current) {
-      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
-
-  // Cleanup progress interval on unmount
-  useEffect(() => {
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-  }, []);
-
-  const loadModel = async () => {
+  const loadModel = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -79,18 +57,16 @@ function ModelView() {
 
       const modelData = await getModel(modelId);
       setModel(modelData);
-      
+
       // Load user profile with credits and subscription
       try {
         const profile = await getUserProfile();
         setCredits(profile.credits);
-        setSubscriptionPlan(profile.subscription_plan || null); // null for no plan
       } catch (error) {
         console.error('Error loading profile:', error);
         setCredits(0); // Default fallback - zero credits
-        setSubscriptionPlan(null); // No plan
       }
-      
+
       setLoading(false);
 
       // Add welcome message
@@ -112,7 +88,27 @@ function ModelView() {
       console.error('Error loading model:', error);
       setLoading(false);
     }
-  };
+  }, [modelId, navigate]);
+
+  useEffect(() => {
+    loadModel();
+  }, [loadModel]);
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
+  // Cleanup progress interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleSendMessage = async () => {
     if (!chatInput.trim() || isGenerating) return;
@@ -239,10 +235,10 @@ function ModelView() {
 
       // Remove generating message and show error
       let errorMessage = `Sorry, there was an error: ${error.message}. Please try again.`;
-      
+
       // Handle insufficient credits error
-      if (error.message && error.message.includes('Insufficient credits') || 
-          error.response?.status === 402 || 
+      if ((error.message && error.message.includes('Insufficient credits')) ||
+          error.response?.status === 402 ||
           error.response?.data?.code === 'INSUFFICIENT_CREDITS') {
         errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please recharge your credits to continue generating images.';
       }
@@ -416,9 +412,9 @@ function ModelView() {
 
       // Remove analyzing message and show error
       let errorMessage = `Sorry, there was an error: ${error.message}. Please try again.`;
-      
-      if (error.message && error.message.includes('Insufficient credits') || 
-          error.response?.status === 402 || 
+
+      if ((error.message && error.message.includes('Insufficient credits')) ||
+          error.response?.status === 402 ||
           error.response?.data?.code === 'INSUFFICIENT_CREDITS') {
         errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please recharge your credits to continue generating images.';
       }
@@ -751,7 +747,6 @@ function ModelView() {
       try {
         const profile = await getUserProfile();
         setCredits(profile.credits);
-        setSubscriptionPlan(profile.subscription_plan || 'base');
       } catch (error) {
         console.error('Error refreshing credits:', error);
       }
@@ -1242,7 +1237,7 @@ function ModelView() {
                             className="quick-select-item"
                             onClick={() => handleNsfwImageSelect(img)}
                           >
-                            <img src={img.image_url} alt="Gallery image" />
+                            <img src={img.image_url} alt={`Model ${img.id}`} />
                           </div>
                         ))}
                       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
@@ -35,17 +35,7 @@ function AdminPanel() {
   const [newAdminRole, setNewAdminRole] = useState('admin');
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    if (currentUser) {
-      loadData();
-    }
-  }, [currentUser, currentPage, search, statusFilter, activeTab]);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -71,9 +61,9 @@ function AdminPanel() {
       console.error('Auth check error:', error);
       navigate('/admin-login');
     }
-  };
+  }, [navigate]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       if (activeTab === 'users') {
         const usersData = await getUsers(currentPage, 50, search, statusFilter);
@@ -90,7 +80,17 @@ function AdminPanel() {
       console.error('Error loading data:', error);
       window.alert(error.message);
     }
-  };
+  }, [activeTab, currentPage, search, statusFilter]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadData();
+    }
+  }, [currentUser, loadData]);
 
   const handleViewUser = async (userId) => {
     try {
