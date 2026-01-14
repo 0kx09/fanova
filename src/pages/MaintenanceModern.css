@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Container */
+.maintenance-modern-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #fafafa;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle radial gradient overlay */
+.maintenance-modern-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(219, 234, 254, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* Main card wrapper */
+.maintenance-modern-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  z-index: 10;
+}
+
+/* Card */
+.maintenance-modern-card {
+  background: white;
+  border: 1px solid #e4e4e7;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(161, 161, 170, 0.1),
+              0 10px 10px -5px rgba(161, 161, 170, 0.04);
+  padding: 2rem;
+}
+
+@media (min-width: 768px) {
+  .maintenance-modern-card {
+    padding: 3rem;
+  }
+}
+
+/* Icon container */
+.maintenance-icon-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.maintenance-icon-box {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 0.75rem;
+  background-color: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.maintenance-icon-svg {
+  height: 1.5rem;
+  width: 1.5rem;
+  color: #2563eb;
+}
+
+/* Headline */
+.maintenance-modern-title {
+  color: #18181b;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-align: center;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+@media (min-width: 768px) {
+  .maintenance-modern-title {
+    font-size: 1.875rem;
+  }
+}
+
+/* Body text */
+.maintenance-modern-description {
+  color: #71717a;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  max-width: 42ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 768px) {
+  .maintenance-modern-description {
+    font-size: 1rem;
+  }
+}
+
+/* Status badge */
+.maintenance-badge-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.maintenance-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: 9999px;
+  background-color: #f4f4f5;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #52525b;
+}
+
+/* Admin login form */
+.maintenance-admin-section {
+  border-top: 1px solid #e4e4e7;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.maintenance-admin-title {
+  color: #18181b;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.maintenance-admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.maintenance-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.maintenance-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.maintenance-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.maintenance-button-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.maintenance-btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.maintenance-btn-primary {
+  background-color: #18181b;
+  color: white;
+}
+
+.maintenance-btn-primary:hover {
+  background-color: #27272a;
+}
+
+.maintenance-btn-secondary {
+  background-color: #f4f4f5;
+  color: #3f3f46;
+}
+
+.maintenance-btn-secondary:hover {
+  background-color: #e4e4e7;
+}
+
+/* Admin access button */
+.maintenance-admin-toggle-container {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.maintenance-admin-toggle {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  font-family: inherit;
+  padding: 0.5rem 1rem;
+}
+
+.maintenance-admin-toggle:hover {
+  color: #52525b;
+}

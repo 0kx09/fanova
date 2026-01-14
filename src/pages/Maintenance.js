@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Maintenance.css';
+import './MaintenanceModern.css';
 
 function Maintenance() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
@@ -24,76 +24,119 @@ function Maintenance() {
   };
 
   return (
-    <div className="maintenance-container">
-      <div className="maintenance-content">
-        <div className="maintenance-icon">
-          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-          </svg>
-        </div>
-
-        <h1>We'll be back soon!</h1>
-
-        <p className="maintenance-message">
-          We're currently performing scheduled maintenance to improve your experience.
-          We apologize for any inconvenience and appreciate your patience.
-        </p>
-
-        <p className="maintenance-submessage">
-          Expected completion: Shortly
-        </p>
-
-        {!showAdminLogin ? (
-          <button
-            className="admin-toggle-btn"
-            onClick={() => setShowAdminLogin(true)}
-          >
-            Admin Access
-          </button>
-        ) : (
-          <div className="admin-login-form">
-            <h3>Admin Login</h3>
-            <form onSubmit={handleAdminLogin}>
-              <div className="form-group">
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  autoComplete="username"
-                  autoFocus
+    <div className="maintenance-modern-container">
+      <div className="maintenance-modern-wrapper">
+        <div className="maintenance-modern-card">
+          {/* Icon container */}
+          <div className="maintenance-icon-container">
+            <div className="maintenance-icon-box">
+              <svg
+                className="maintenance-icon-svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
                 />
-              </div>
-              <div className="form-group">
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
-              </div>
-              {error && <div className="error-message">{error}</div>}
-              <div className="form-actions">
-                <button type="submit" className="login-btn">
-                  Login
-                </button>
-                <button
-                  type="button"
-                  className="cancel-btn"
-                  onClick={() => {
-                    setShowAdminLogin(false);
-                    setUsername('');
-                    setPassword('');
-                    setError('');
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              </svg>
+            </div>
           </div>
-        )}
+
+          {/* Headline */}
+          <h1 className="maintenance-modern-title">
+            We are currently improving our systems.
+          </h1>
+
+          {/* Body text */}
+          <p className="maintenance-modern-description">
+            We're performing scheduled maintenance to ensure the best experience for you. We apologize for the inconvenience and expect to be back shortly.
+          </p>
+
+          {/* Status badge */}
+          <div className="maintenance-badge-container">
+            <span className="maintenance-status-badge">
+              Status: Maintenance in progress
+            </span>
+          </div>
+
+          {/* Admin login form */}
+          {showAdminLogin && (
+            <div className="maintenance-admin-section">
+              <h3 className="maintenance-admin-title">
+                Admin Login
+              </h3>
+              <form onSubmit={handleAdminLogin} className="maintenance-admin-form">
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                    autoFocus
+                    className="maintenance-input"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    className="maintenance-input"
+                  />
+                </div>
+                {error && (
+                  <div className="maintenance-error">
+                    {error}
+                  </div>
+                )}
+                <div className="maintenance-button-group">
+                  <button
+                    type="submit"
+                    className="maintenance-btn maintenance-btn-primary"
+                  >
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAdminLogin(false);
+                      setUsername('');
+                      setPassword('');
+                      setError('');
+                    }}
+                    className="maintenance-btn maintenance-btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Admin access button */}
+          {!showAdminLogin && (
+            <div className="maintenance-admin-toggle-container">
+              <button
+                onClick={() => setShowAdminLogin(true)}
+                className="maintenance-admin-toggle"
+              >
+                Admin Access
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
