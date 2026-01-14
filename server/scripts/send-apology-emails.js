@@ -16,7 +16,7 @@ const AFFECTED_USERS = [
   // Add user emails here, for example:
    { email: 'skubiadam2@gmail.com', name: 'skubiadam2' },
    { email: 'raucescuandrew3@gmail.com', name: 'raucescuandrew3' },
-  // { email: 'user3@example.com' }, // Name is optional
+   { email: 'oskar.kakareko@gmail.com', name: 'oskar.kakareko' }, // Name is optional
 ];
 
 /**
