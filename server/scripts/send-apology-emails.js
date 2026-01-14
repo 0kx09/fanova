@@ -14,8 +14,8 @@ const { sendAccountDeletionApologyEmail } = require('../services/emailService');
 // List of affected users - update this array with actual user emails
 const AFFECTED_USERS = [
   // Add user emails here, for example:
-  // { email: 'user1@example.com', name: 'John Doe' },
-  // { email: 'user2@example.com', name: 'Jane Smith' },
+   { email: 'skubiadam2@gmail.com', name: 'skubiadam2' },
+   { email: 'raucescuandrew3@gmail.com', name: 'raucescuandrew3' },
   // { email: 'user3@example.com' }, // Name is optional
 ];
 
