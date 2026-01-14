@@ -27,8 +27,12 @@ SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Stripe (USE LIVE KEYS)
+# Backend (server/.env):
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...  # Optional
+
+# Frontend (root .env or .env.local):
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_...
 
 # Email
 RESEND_API_KEY=re_...

@@ -5,7 +5,7 @@
  */
 
 // Enable/disable maintenance mode
-export const MAINTENANCE_MODE = true;
+export const MAINTENANCE_MODE = false; // Disabled - site is ready for production
 
 // Check if user has admin bypass
 export const hasAdminBypass = () => {

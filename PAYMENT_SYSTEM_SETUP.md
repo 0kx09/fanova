@@ -53,8 +53,12 @@ Make sure these are set in your `.env` file (in the `server` directory):
 
 ```env
 # Stripe Configuration (REQUIRED)
+# Backend (server/.env):
 STRIPE_SECRET_KEY=sk_test_...  # Your Stripe secret key
 STRIPE_WEBHOOK_SECRET=whsec_...  # Optional - only needed if you want webhooks
+
+# Frontend (root .env or .env.local):
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_...  # Your Stripe publishable key
 
 # Supabase Configuration (REQUIRED)
 SUPABASE_URL=https://your-project.supabase.co
@@ -71,7 +75,9 @@ FRONTEND_URL=http://localhost:3000  # Or your production URL
 1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
 2. Navigate to **Developers** → **API keys**
 3. Copy your **Secret key** (starts with `sk_test_` or `sk_live_`)
-4. Add it to your `.env` file as `STRIPE_SECRET_KEY`
+   - Add it to `server/.env` as `STRIPE_SECRET_KEY`
+4. Copy your **Publishable key** (starts with `pk_test_` or `pk_live_`)
+   - Add it to your frontend `.env` or `.env.local` as `REACT_APP_STRIPE_PUBLISHABLE_KEY`
 
 ### 2. Create Products and Prices in Stripe
 
