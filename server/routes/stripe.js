@@ -109,7 +109,7 @@ router.post('/create-checkout-session', async (req, res) => {
         },
       ],
       ui_mode: 'embedded',
-      return_url: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/payment-success?session_id={CHECKOUT_SESSION_ID}&modelId=${modelId || ''}&selectedImageId=${selectedImageId || ''}`,
+      return_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://usefanova.com'}/payment-success?session_id={CHECKOUT_SESSION_ID}&modelId=${modelId || ''}&selectedImageId=${selectedImageId || ''}`,
       metadata: {
         user_id: userId,
         model_id: modelId || '',
@@ -247,7 +247,7 @@ router.post('/create-portal-session', async (req, res) => {
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: profile.stripe_customer_id,
-      return_url: `${req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard?tab=settings`,
+      return_url: `${req.headers.origin || process.env.FRONTEND_URL || 'https://usefanova.com'}/dashboard?tab=settings`,
     });
 
     res.json({ url: portalSession.url });
