@@ -17,12 +17,14 @@ const stripeRouter = require('./routes/stripe');
 const adminRouter = require('./routes/admin');
 const referralsRouter = require('./routes/referrals');
 const nsfwRouter = require('./routes/nsfw');
+const testEmailRouter = require('./routes/test-email');
 app.use('/api/auth', authRouter);
 app.use('/api/models', modelsRouter);
 app.use('/api/stripe', stripeRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/nsfw', nsfwRouter);
+app.use('/api/test-email', testEmailRouter);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -75,6 +77,13 @@ const server = app.listen(PORT, () => {
     console.log('✅ Replicate API token found');
   } else {
     console.log('⚠️  No image generation API key found in .env');
+  }
+
+  // Check for Resend API key
+  if (process.env.RESEND_API_KEY) {
+    console.log('✅ Resend API key found');
+  } else {
+    console.log('⚠️  No Resend API key found - emails will not work');
   }
 });
 
