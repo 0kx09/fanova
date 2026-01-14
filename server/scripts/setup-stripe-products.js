@@ -94,19 +94,25 @@ async function createProducts() {
       console.log(`   ✅ Product created: ${product.id}`);
 
       // Create price
-      const price = await stripe.prices.create({
+      const priceData = {
         product: product.id,
         unit_amount: Math.round(productDef.price * 100), // Convert to cents
         currency: 'usd',
         recurring: {
-          interval: 'month',
-          trial_period_days: productDef.trial_days || null
+          interval: 'month'
         },
         metadata: {
           plan_type: productDef.plan_type,
           monthly_credits: productDef.credits
         }
-      });
+      };
+
+      // Only add trial_period_days if it exists
+      if (productDef.trial_days) {
+        priceData.recurring.trial_period_days = productDef.trial_days;
+      }
+
+      const price = await stripe.prices.create(priceData);
 
       console.log(`   ✅ Price created: ${price.id}`);
       console.log(`   💰 Amount: $${(price.unit_amount / 100).toFixed(2)}/month`);
@@ -122,7 +128,6 @@ async function createProducts() {
           plan_type: productDef.plan_type,
           amount: productDef.price,
           currency: 'usd',
-          interval: 'month',
           monthly_credits: productDef.credits
         }, {
           onConflict: 'price_id'
