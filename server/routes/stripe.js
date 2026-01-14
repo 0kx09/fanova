@@ -611,7 +611,7 @@ async function handleSubscriptionDeleted(subscription) {
     await supabase
       .from('profiles')
       .update({
-        subscription_plan: 'base',
+        subscription_plan: null,
         stripe_subscription_id: null,
         subscription_start_date: null,
         subscription_renewal_date: null

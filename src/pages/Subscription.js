@@ -28,13 +28,18 @@ function Subscription() {
 
   const handlePlanChange = async (newPlan) => {
     if (updating) return;
-    
-    const currentPlan = profile?.subscription_plan || 'base';
+
+    const currentPlan = profile?.subscription_plan || null;
     if (newPlan === currentPlan) {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to ${newPlan > currentPlan ? 'upgrade' : 'downgrade'} to ${SUBSCRIPTION_PLANS[newPlan].name}?`)) {
+    const action = !currentPlan ? 'subscribe' : 'change';
+    const confirmMessage = !currentPlan
+      ? `Subscribe to ${SUBSCRIPTION_PLANS[newPlan].name}?`
+      : `Change your subscription to ${SUBSCRIPTION_PLANS[newPlan].name}?`;
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -43,10 +48,9 @@ function Subscription() {
     setSuccess(null);
 
     try {
-      const action = newPlan > currentPlan ? 'upgraded' : 'downgraded';
       await updateSubscriptionPlan(newPlan, action);
       await loadProfile();
-      setSuccess(`Successfully ${action} to ${SUBSCRIPTION_PLANS[newPlan].name}`);
+      setSuccess(`Successfully ${action === 'subscribe' ? 'subscribed' : 'changed'} to ${SUBSCRIPTION_PLANS[newPlan].name}`);
     } catch (error) {
       console.error('Error updating subscription:', error);
       setError(error.message || 'Failed to update subscription');
@@ -63,14 +67,16 @@ function Subscription() {
     );
   }
 
-  const currentPlan = profile?.subscription_plan || 'base';
+  const currentPlan = profile?.subscription_plan || null;
   const bestValuePlan = getBestValuePlan();
 
   return (
     <div className="subscription-container">
       <div className="subscription-header">
         <h1>Subscription Plans</h1>
-        <p className="subscription-subtitle">Choose the plan that works best for you</p>
+        <p className="subscription-subtitle">
+          {currentPlan ? 'Manage your subscription' : 'Choose a plan to get started'}
+        </p>
       </div>
 
       {error && (
@@ -82,6 +88,12 @@ function Subscription() {
       {success && (
         <div className="subscription-success">
           {success}
+        </div>
+      )}
+
+      {!currentPlan && (
+        <div className="subscription-notice">
+          You currently have no active subscription. Subscribe to a plan to get monthly credits.
         </div>
       )}
 
@@ -136,11 +148,11 @@ function Subscription() {
                   </button>
                 ) : (
                   <button
-                    className={`plan-button ${planKey > currentPlan ? 'upgrade-button' : 'downgrade-button'}`}
+                    className="plan-button upgrade-button"
                     onClick={() => handlePlanChange(planKey)}
                     disabled={updating}
                   >
-                    {planKey > currentPlan ? 'Upgrade' : 'Downgrade'}
+                    {currentPlan ? 'Change Plan' : 'Subscribe'}
                   </button>
                 )}
               </div>

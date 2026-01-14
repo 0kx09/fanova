@@ -34,7 +34,8 @@
 }
 
 .subscription-error,
-.subscription-success {
+.subscription-success,
+.subscription-notice {
   max-width: 600px;
   margin: 0 auto 32px;
   padding: 16px 20px;
@@ -47,6 +48,12 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #FCA5A5;
+}
+
+.subscription-notice {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93C5FD;
 }
 
 .subscription-success {
