@@ -5,7 +5,11 @@
  * Run with: node server/scripts/setup-stripe-products.js
  */
 
-require('dotenv').config();
+const path = require('path');
+
+// Load .env from server directory (parent of scripts)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const supabase = require('../config/supabase');
 
