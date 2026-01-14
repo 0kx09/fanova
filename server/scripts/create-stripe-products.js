@@ -29,7 +29,25 @@ const PLANS = {
 
 async function createProductsAndPrices() {
   try {
-    console.log('Creating Stripe products and prices...\n');
+    console.log('🚀 Creating Stripe products and prices...\n');
+
+    // Check if we have a Stripe key
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error('❌ ERROR: STRIPE_SECRET_KEY not found in environment variables');
+      console.error('   Please set STRIPE_SECRET_KEY in your .env file');
+      process.exit(1);
+    }
+
+    // Warn if using test key
+    if (process.env.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
+      console.warn('⚠️  WARNING: You are using a TEST Stripe key (sk_test_...)');
+      console.warn('   Products will be created in TEST mode.');
+      console.warn('   For production, use a LIVE key (sk_live_...)\n');
+    } else if (process.env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
+      console.log('✅ Using LIVE Stripe key - products will be created in PRODUCTION mode\n');
+    } else {
+      console.warn('⚠️  WARNING: Stripe key format is unusual. Proceeding anyway...\n');
+    }
 
     // Check if table exists (it should be created via SQL migration)
     const { error: tableCheckError } = await supabase
