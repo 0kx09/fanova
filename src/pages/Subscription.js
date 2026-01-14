@@ -231,7 +231,7 @@ function Subscription() {
           <li><strong>Batch Generation (3 images):</strong> 25 credits total</li>
         </ul>
         <p className="subscription-note">
-          Credits are allocated monthly based on your plan. You can purchase additional credits anytime without changing your plan.
+          Credits are allocated monthly based on your plan. Unused credits roll over to the next month.
         </p>
       </div>
     </div>

@@ -41,12 +41,15 @@ export const SUBSCRIPTION_PLANS = {
   }
 };
 
-// Credit Recharge Options
+// Credit Recharge Options - DISABLED
+// Credit purchasing is currently disabled in favor of subscription-only model
+/*
 export const CREDIT_RECHARGES = [
   { id: 'recharge-50', credits: 50, price: 4.99, currency: 'GBP' },
   { id: 'recharge-100', credits: 100, price: 9.99, currency: 'GBP' },
   { id: 'recharge-250', credits: 250, price: 19.99, currency: 'GBP' }
 ];
+*/
 
 // Standard SFW image generation cost (same for all plans)
 export const STANDARD_IMAGE_COST = 10;

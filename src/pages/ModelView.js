@@ -125,7 +125,7 @@ function ModelView() {
           content: userMessage
         }, {
           type: 'error',
-          content: creditCheck.error || 'Insufficient credits. Please recharge your credits to continue.'
+          content: creditCheck.error || 'Insufficient credits. Please upgrade your subscription plan to continue.'
         }]);
         return;
       }
@@ -241,7 +241,7 @@ function ModelView() {
       if ((error.message && error.message.includes('Insufficient credits')) ||
           error.response?.status === 402 ||
           error.response?.data?.code === 'INSUFFICIENT_CREDITS') {
-        errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please recharge your credits to continue generating images.';
+        errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please upgrade your subscription plan to continue generating images.';
       }
 
       setChatMessages(prev => {
@@ -304,7 +304,7 @@ function ModelView() {
       if (!creditCheck.hasCredits) {
         setChatMessages(prev => [...prev, {
           type: 'error',
-          content: creditCheck.error || 'Insufficient credits. Please recharge your credits to continue.'
+          content: creditCheck.error || 'Insufficient credits. Please upgrade your subscription plan to continue.'
         }]);
         return;
       }
@@ -417,7 +417,7 @@ function ModelView() {
       if ((error.message && error.message.includes('Insufficient credits')) ||
           error.response?.status === 402 ||
           error.response?.data?.code === 'INSUFFICIENT_CREDITS') {
-        errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please recharge your credits to continue generating images.';
+        errorMessage = error.response?.data?.error || error.message || 'Insufficient credits. Please upgrade your subscription plan to continue generating images.';
       }
 
       setChatMessages(prev => {

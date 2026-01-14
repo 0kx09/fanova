@@ -272,7 +272,7 @@ function LandingPage() {
           </div>
 
           <div className="pricing-note">
-            <p>Need more credits? <strong>Recharge anytime</strong> with flexible credit packs starting at £4.99</p>
+            <p>All plans include monthly credit allocations. <strong>Unused credits roll over</strong> to the next month.</p>
           </div>
         </div>
       </section>

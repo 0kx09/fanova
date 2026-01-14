@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getUserModels, getUserProfile } from '../services/supabaseService';
 import { getPlanDetails } from '../services/pricingService';
-import CreditRecharge from '../components/CreditRecharge';
+// import CreditRecharge from '../components/CreditRecharge'; // Disabled - credit purchasing
 import Settings from './Settings';
 import './DashboardNew.css';
 
@@ -14,7 +14,7 @@ function DashboardNew() {
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState(null);
-  const [showRecharge, setShowRecharge] = useState(false);
+  // const [showRecharge, setShowRecharge] = useState(false); // Disabled - credit purchasing
 
   const loadModels = useCallback(async () => {
     try {
@@ -104,13 +104,15 @@ function DashboardNew() {
               {subscriptionPlan ? (getPlanDetails(subscriptionPlan)?.name || subscriptionPlan) : 'No Plan'}
             </span>
           </div>
-          <button 
+          {/* Credit purchasing disabled
+          <button
             className="credits-recharge-btn"
             onClick={() => setShowRecharge(true)}
             title="Purchase more credits"
           >
             +
           </button>
+          */}
         </div>
 
         <nav className="sidebar-nav">
@@ -214,6 +216,7 @@ function DashboardNew() {
         </div>
       </div>
 
+      {/* Credit purchasing disabled
       {showRecharge && (
         <CreditRecharge
           currentCredits={credits}
@@ -231,6 +234,7 @@ function DashboardNew() {
           }}
         />
       )}
+      */}
     </div>
   );
 })}

@@ -220,7 +220,7 @@ export const generateNSFWImage = async (imageInput, prompt) => {
 
       // Handle insufficient credits error
       if (errorData.code === 'INSUFFICIENT_CREDITS') {
-        throw new Error(errorData.error || 'Insufficient credits. Please subscribe to a plan or purchase more credits.');
+        throw new Error(errorData.error || 'Insufficient credits. Please subscribe to a plan or upgrade your subscription.');
       }
 
       throw new Error(errorData.error || `API error: ${response.status}`);
