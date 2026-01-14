@@ -15,6 +15,8 @@ router.post('/ensure-profile', async (req, res) => {
     let userId = null;
     let userEmail = null;
 
+    let userCreatedAt = null;
+    
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
@@ -22,6 +24,7 @@ router.post('/ensure-profile', async (req, res) => {
         if (!error && user) {
           userId = user.id;
           userEmail = user.email;
+          userCreatedAt = user.created_at; // Get user creation timestamp
         }
       } catch (e) {
         console.error('Error verifying token:', e);
@@ -42,16 +45,59 @@ router.post('/ensure-profile', async (req, res) => {
     // Check if profile already exists
     const { data: existingProfile, error: checkError } = await supabase
       .from('profiles')
-      .select('id, credits, subscription_plan')
+      .select('id, credits, subscription_plan, created_at')
       .eq('id', userId)
       .maybeSingle();
 
     if (existingProfile) {
       console.log('✅ Profile already exists:', existingProfile);
+      
+      // Check if this is a newly created user/profile
+      // If user was created within last 5 minutes, send welcome email
+      let isNewUser = false;
+      
+      if (userCreatedAt) {
+        // Use user creation time from auth (most accurate)
+        const userCreated = new Date(userCreatedAt);
+        const now = new Date();
+        const minutesSinceCreation = (now - userCreated) / (1000 * 60);
+        isNewUser = minutesSinceCreation < 5; // Created within last 5 minutes
+        
+        if (isNewUser) {
+          console.log(`📧 User was created ${minutesSinceCreation.toFixed(1)} minutes ago - sending welcome email`);
+        }
+      } else {
+        // Fallback: check profile creation time
+        const profileCreatedAt = new Date(existingProfile.created_at);
+        const now = new Date();
+        const minutesSinceCreation = (now - profileCreatedAt) / (1000 * 60);
+        isNewUser = minutesSinceCreation < 5; // Created within last 5 minutes
+        
+        if (isNewUser) {
+          console.log(`📧 Profile was created ${minutesSinceCreation.toFixed(1)} minutes ago - sending welcome email`);
+        }
+      }
+      
+      // Send welcome email if this is a new user (profile created by trigger)
+      if (isNewUser && userEmail) {
+        sendWelcomeEmail(userEmail)
+          .then(result => {
+            if (result.success) {
+              console.log('✅ Welcome email sent successfully to:', userEmail);
+            } else {
+              console.error('⚠️ Failed to send welcome email:', result.error);
+            }
+          })
+          .catch(err => {
+            console.error('⚠️ Exception sending welcome email (non-blocking):', err.message || err);
+          });
+      }
+      
       return res.json({
         success: true,
         profile: existingProfile,
-        created: false
+        created: false,
+        isNewUser: isNewUser
       });
     }
 
