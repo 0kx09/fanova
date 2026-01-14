@@ -3,12 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { createCheckoutSession } from '../services/stripeService';
+import { ensureProfile } from '../services/authService';
 import './EmbeddedCheckout.css';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 function EmbeddedCheckoutComponent({ priceId, modelId, selectedImageId, planType, onSuccess, onCancel }) {
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
 
   // Check for successful payment redirect
@@ -21,14 +23,36 @@ function EmbeddedCheckoutComponent({ priceId, modelId, selectedImageId, planType
   }, [searchParams, onSuccess]);
 
   const fetchClientSecret = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
     try {
+      console.log('Ensuring user profile exists...');
+      // CRITICAL FIX: Ensure profile exists before creating checkout session
+      // This prevents "user not found" errors
+      await ensureProfile();
+      console.log('Profile verified');
+
       console.log('Creating checkout session with:', { priceId, modelId, selectedImageId, planType });
-      const clientSecret = await createCheckoutSession(priceId, modelId, selectedImageId, planType);
+
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 30000)
+      );
+
+      const clientSecret = await Promise.race([
+        createCheckoutSession(priceId, modelId, selectedImageId, planType),
+        timeoutPromise
+      ]);
+
       console.log('Checkout session created successfully');
+      setLoading(false);
       return clientSecret;
     } catch (err) {
       console.error('Error creating checkout session:', err);
-      setError(err.message || 'Failed to create checkout session');
+      const errorMessage = err.message || 'Failed to create checkout session';
+      setError(errorMessage);
+      setLoading(false);
       throw err;
     }
   }, [priceId, modelId, selectedImageId, planType]);
@@ -54,6 +78,12 @@ function EmbeddedCheckoutComponent({ priceId, modelId, selectedImageId, planType
           ← Back to Plans
         </button>
       </div>
+      {loading && (
+        <div className="checkout-loading">
+          <div className="loading-spinner"></div>
+          <p>Setting up secure payment...</p>
+        </div>
+      )}
       <div className="checkout-wrapper">
         <EmbeddedCheckoutProvider
           stripe={stripePromise}
