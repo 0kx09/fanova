@@ -98,7 +98,9 @@ Key functions:
 
 ### API Endpoint
 
-**POST** `/api/models/:id/generate-chat`
+**Base URL**: `https://usefanova.com/api`
+
+**POST** `https://usefanova.com/api/models/:id/generate-chat`
 
 ```javascript
 {
@@ -149,7 +151,7 @@ When creating a model:
 const referenceImages = ['url1', 'url2', 'url3'];
 
 // Generate initial images
-POST /api/models/:id/generate
+POST https://usefanova.com/api/models/:id/generate
 {
   "numImages": 3,
   "referenceImages": referenceImages
@@ -161,7 +163,7 @@ The system automatically creates an identity packet using the generated images.
 ### 2. Generate with Identity Lock
 
 ```javascript
-POST /api/models/:id/generate-chat
+POST https://usefanova.com/api/models/:id/generate-chat
 {
   "userPrompt": "Standing in a park, wearing casual clothes",
   "numImages": 3
@@ -218,7 +220,7 @@ Check logs for blocked identity changes:
 #### 1. Basic Generation
 ```bash
 # Should work normally
-POST /api/models/:id/generate-chat
+POST https://usefanova.com/api/models/:id/generate-chat
 {
   "userPrompt": "Standing in a coffee shop, wearing a blue shirt"
 }
@@ -227,7 +229,7 @@ POST /api/models/:id/generate-chat
 #### 2. Identity Change (Should be Blocked)
 ```bash
 # Firewall should filter out "blonde" and "blue eyes"
-POST /api/models/:id/generate-chat
+POST https://usefanova.com/api/models/:id/generate-chat
 {
   "userPrompt": "Make her blonde with blue eyes at the beach"
 }
@@ -240,7 +242,9 @@ POST /api/models/:id/generate-chat
 # Generate 10 times in a row
 # Identity should remain consistent across all 10 generations
 for i in {1..10}; do
-  POST /api/models/:id/generate-chat {"userPrompt": "Different pose $i"}
+  curl -X POST https://usefanova.com/api/models/:id/generate-chat \
+    -H "Content-Type: application/json" \
+    -d '{"userPrompt": "Different pose '$i'"}'
 done
 ```
 
