@@ -3,8 +3,12 @@ const router = express.Router();
 const { checkAndDeductForGeneration, getUserProfile } = require('../services/creditService');
 const supabase = require('../config/supabase');
 
-const WAVESPEED_API_KEY = 'c4fdc8705e394ffde2ca14458a8fc00ab41086c7a3281a717c5bb134b5cd6bac';
+const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
 const WAVESPEED_API_URL = 'https://api.wavespeed.ai/api/v3/bytedance/seedream-v4/edit';
+
+if (!WAVESPEED_API_KEY) {
+  console.warn('⚠️ WAVESPEED_API_KEY not found in environment variables. NSFW routes will not work.');
+}
 
 /**
  * Poll the Wavespeed API for result

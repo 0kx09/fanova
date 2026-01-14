@@ -9,10 +9,12 @@ The application now uses [Resend](https://resend.com) for sending transactional 
 ## Configuration
 
 ### 1. Environment Variables
-The Resend API key has been added to `server/.env`:
+Add the Resend API key to `server/.env`:
 ```
-RESEND_API_KEY=re_VyBqKpbc_4F2YuqQzyW6AdCqHQFCEFuaw
+RESEND_API_KEY=re_your_api_key_here
 ```
+
+**⚠️ SECURITY:** Never commit API keys to git. Always use environment variables.
 
 ### 2. Domain Verification
 **IMPORTANT:** You need to verify your sending domain in Resend before emails will work.

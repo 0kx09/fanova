@@ -84,9 +84,19 @@ router.post('/ensure-profile', async (req, res) => {
 
     // Send welcome email (async, don't block response)
     if (userEmail) {
-      sendWelcomeEmail(userEmail).catch(err => {
-        console.error('⚠️ Failed to send welcome email (non-blocking):', err);
-      });
+      sendWelcomeEmail(userEmail)
+        .then(result => {
+          if (result.success) {
+            console.log('✅ Welcome email sent successfully to:', userEmail);
+          } else {
+            console.error('⚠️ Failed to send welcome email:', result.error);
+          }
+        })
+        .catch(err => {
+          console.error('⚠️ Exception sending welcome email (non-blocking):', err.message || err);
+        });
+    } else {
+      console.warn('⚠️ Cannot send welcome email: userEmail is missing');
     }
 
     res.json({

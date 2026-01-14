@@ -1,6 +1,16 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend client
+// Resend SDK automatically uses RESEND_API_KEY from environment if not provided
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+if (!RESEND_API_KEY) {
+  console.warn('⚠️  RESEND_API_KEY not found in environment variables. Emails will not be sent.');
+} else if (!RESEND_API_KEY.startsWith('re_')) {
+  console.warn('⚠️  RESEND_API_KEY format appears invalid (should start with "re_"). Emails may not work.');
+}
+
+const resend = new Resend(RESEND_API_KEY);
 
 // Email configuration
 const FROM_EMAIL = 'Fanova <noreply@usefanova.com>'; // Update with your verified domain
@@ -12,6 +22,18 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://usefanova.com';
  * @param {string} userName - User's name (optional)
  */
 async function sendWelcomeEmail(userEmail, userName = '') {
+  // Validate API key before attempting to send
+  if (!RESEND_API_KEY) {
+    console.error('❌ Cannot send welcome email: RESEND_API_KEY not configured');
+    return { success: false, error: { message: 'Email service not configured' } };
+  }
+
+  // Validate email address
+  if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
+    console.error('❌ Invalid email address:', userEmail);
+    return { success: false, error: { message: 'Invalid email address' } };
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -159,15 +181,27 @@ async function sendWelcomeEmail(userEmail, userName = '') {
     });
 
     if (error) {
-      console.error('❌ Error sending welcome email:', error);
+      console.error('❌ Resend API error sending welcome email:', {
+        name: error.name,
+        message: error.message,
+        statusCode: error.statusCode
+      });
       return { success: false, error };
     }
 
-    console.log('✅ Welcome email sent successfully:', data);
-    return { success: true, data };
+    if (data && data.id) {
+      console.log('✅ Welcome email sent successfully. Email ID:', data.id);
+      return { success: true, data };
+    } else {
+      console.warn('⚠️ Welcome email sent but no ID returned:', data);
+      return { success: true, data };
+    }
   } catch (error) {
-    console.error('❌ Exception sending welcome email:', error);
-    return { success: false, error: error.message };
+    console.error('❌ Exception sending welcome email:', {
+      message: error.message,
+      stack: error.stack
+    });
+    return { success: false, error: { message: error.message } };
   }
 }
 
@@ -179,6 +213,18 @@ async function sendWelcomeEmail(userEmail, userName = '') {
  * @param {string} modelName - Name of the generated model
  */
 async function sendFirstModelEmail(userEmail, userName = '', modelId, modelName = 'Your Model') {
+  // Validate API key before attempting to send
+  if (!RESEND_API_KEY) {
+    console.error('❌ Cannot send first model email: RESEND_API_KEY not configured');
+    return { success: false, error: { message: 'Email service not configured' } };
+  }
+
+  // Validate email address
+  if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
+    console.error('❌ Invalid email address:', userEmail);
+    return { success: false, error: { message: 'Invalid email address' } };
+  }
+
   try {
     const modelUrl = `${FRONTEND_URL}/model/${modelId}`;
 
@@ -369,6 +415,18 @@ async function sendFirstModelEmail(userEmail, userName = '', modelId, modelName 
  * @param {number} credits - Monthly credits included
  */
 async function sendSubscriptionConfirmationEmail(userEmail, userName = '', planName, credits) {
+  // Validate API key before attempting to send
+  if (!RESEND_API_KEY) {
+    console.error('❌ Cannot send subscription email: RESEND_API_KEY not configured');
+    return { success: false, error: { message: 'Email service not configured' } };
+  }
+
+  // Validate email address
+  if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
+    console.error('❌ Invalid email address:', userEmail);
+    return { success: false, error: { message: 'Invalid email address' } };
+  }
+
   try {
     const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
