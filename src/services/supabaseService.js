@@ -298,7 +298,7 @@ export const getUserProfile = async () => {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('credits, subscription_plan, subscription_start_date, subscription_renewal_date, monthly_credits_allocated, email')
+    .select('credits, subscription_plan, subscription_start_date, subscription_renewal_date, monthly_credits_allocated, email, has_used_trial')
     .eq('id', user.id)
     .single();
 
@@ -311,7 +311,8 @@ export const getUserProfile = async () => {
         subscription_plan: null, // No plan by default
         subscription_start_date: null,
         subscription_renewal_date: null,
-        monthly_credits_allocated: 0
+        monthly_credits_allocated: 0,
+        has_used_trial: false
       };
     }
     throw error;
@@ -323,7 +324,8 @@ export const getUserProfile = async () => {
     subscription_start_date: data?.subscription_start_date ?? null,
     subscription_renewal_date: data?.subscription_renewal_date ?? null,
     monthly_credits_allocated: data?.monthly_credits_allocated ?? 0,
-    email: data?.email ?? null
+    email: data?.email ?? null,
+    has_used_trial: data?.has_used_trial ?? false
   };
 };
 

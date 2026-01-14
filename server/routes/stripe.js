@@ -46,10 +46,10 @@ router.post('/create-checkout-session', async (req, res) => {
       return res.status(401).json({ error: 'User authentication required' });
     }
 
-    // Get user email from Supabase
+    // Get user email and trial status from Supabase
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('email')
+      .select('email, has_used_trial, subscription_plan')
       .eq('id', userId)
       .single();
 
@@ -96,7 +96,19 @@ router.post('/create-checkout-session', async (req, res) => {
     }
 
     const isUltimatePlan = finalPlanType === 'ultimate';
-    console.log('📋 Plan details:', { planType, finalPlanType, isUltimatePlan, priceId });
+    const hasUsedTrial = profile.has_used_trial || false;
+    const isChangingPlan = profile.subscription_plan && profile.subscription_plan !== finalPlanType;
+    const canGetTrial = isUltimatePlan && !hasUsedTrial;
+
+    console.log('📋 Plan details:', {
+      planType,
+      finalPlanType,
+      isUltimatePlan,
+      hasUsedTrial,
+      isChangingPlan,
+      canGetTrial,
+      priceId
+    });
 
     // Create checkout session
     const sessionConfig = {
@@ -118,12 +130,14 @@ router.post('/create-checkout-session', async (req, res) => {
       }
     };
 
-    // Add 1-day free trial for Ultimate plan
-    if (isUltimatePlan) {
+    // Add 1-day free trial for Ultimate plan only if user hasn't used trial before
+    if (canGetTrial) {
       sessionConfig.subscription_data = {
         trial_period_days: 1
       };
-      console.log('✅ Added 1-day free trial for Ultimate plan');
+      console.log('✅ Added 1-day free trial for Ultimate plan (first time trial)');
+    } else if (isUltimatePlan && hasUsedTrial) {
+      console.log('ℹ️  No trial for Ultimate plan (user has already used trial)');
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
@@ -437,6 +451,12 @@ async function handleCheckoutCompleted(session) {
     // Only add credits if subscription is active or trialing
     if (shouldAllocateCredits) {
       updateData.credits = newCredits;
+    }
+
+    // Mark trial as used if this subscription includes a trial
+    if (subscription.trial_end && planType === 'ultimate') {
+      updateData.has_used_trial = true;
+      console.log('✅ Marking trial as used for user');
     }
 
     console.log('💾 Updating profile with:', updateData);

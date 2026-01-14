@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfile, updateSubscriptionPlan } from '../services/supabaseService';
 import { SUBSCRIPTION_PLANS, formatPrice, getCreditsPerPound, getBestValuePlan } from '../services/pricingService';
+import { getStripePriceIds } from '../services/stripeService';
+import EmbeddedCheckout from '../components/EmbeddedCheckout';
 import './Subscription.css';
 
 function Subscription() {
@@ -9,9 +11,13 @@ function Subscription() {
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [priceIds, setPriceIds] = useState({});
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   useEffect(() => {
     loadProfile();
+    loadPriceIds();
   }, []);
 
   const loadProfile = async () => {
@@ -26,6 +32,15 @@ function Subscription() {
     }
   };
 
+  const loadPriceIds = async () => {
+    try {
+      const prices = await getStripePriceIds();
+      setPriceIds(prices);
+    } catch (error) {
+      console.error('Error loading price IDs:', error);
+    }
+  };
+
   const handlePlanChange = async (newPlan) => {
     if (updating) return;
 
@@ -34,29 +49,51 @@ function Subscription() {
       return;
     }
 
-    const action = !currentPlan ? 'subscribe' : 'change';
-    const confirmMessage = !currentPlan
-      ? `Subscribe to ${SUBSCRIPTION_PLANS[newPlan].name}?`
-      : `Change your subscription to ${SUBSCRIPTION_PLANS[newPlan].name}?`;
+    // Skip base plan - don't need Stripe checkout for free plan
+    if (newPlan === 'base') {
+      const action = !currentPlan ? 'subscribe' : 'change';
+      const confirmMessage = !currentPlan
+        ? `Subscribe to ${SUBSCRIPTION_PLANS[newPlan].name}?`
+        : `Change your subscription to ${SUBSCRIPTION_PLANS[newPlan].name}?`;
 
-    if (!window.confirm(confirmMessage)) {
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      setUpdating(true);
+      setError(null);
+      setSuccess(null);
+
+      try {
+        await updateSubscriptionPlan(newPlan, action);
+        await loadProfile();
+        setSuccess(`Successfully ${action === 'subscribe' ? 'subscribed' : 'changed'} to ${SUBSCRIPTION_PLANS[newPlan].name}`);
+      } catch (error) {
+        console.error('Error updating subscription:', error);
+        setError(error.message || 'Failed to update subscription');
+      } finally {
+        setUpdating(false);
+      }
       return;
     }
 
-    setUpdating(true);
+    // For paid plans, show Stripe checkout
+    setSelectedPlan(newPlan);
+    setShowCheckout(true);
     setError(null);
     setSuccess(null);
+  };
 
-    try {
-      await updateSubscriptionPlan(newPlan, action);
-      await loadProfile();
-      setSuccess(`Successfully ${action === 'subscribe' ? 'subscribed' : 'changed'} to ${SUBSCRIPTION_PLANS[newPlan].name}`);
-    } catch (error) {
-      console.error('Error updating subscription:', error);
-      setError(error.message || 'Failed to update subscription');
-    } finally {
-      setUpdating(false);
-    }
+  const handleCheckoutSuccess = async () => {
+    setShowCheckout(false);
+    setSelectedPlan(null);
+    await loadProfile();
+    setSuccess('Successfully updated your subscription!');
+  };
+
+  const handleCheckoutCancel = () => {
+    setShowCheckout(false);
+    setSelectedPlan(null);
   };
 
   if (loading) {
@@ -69,6 +106,19 @@ function Subscription() {
 
   const currentPlan = profile?.subscription_plan || null;
   const bestValuePlan = getBestValuePlan();
+  const hasUsedTrial = profile?.has_used_trial || false;
+
+  // If showing checkout, render the checkout component
+  if (showCheckout && selectedPlan && priceIds[selectedPlan]) {
+    return (
+      <EmbeddedCheckout
+        priceId={priceIds[selectedPlan]}
+        planType={selectedPlan}
+        onSuccess={handleCheckoutSuccess}
+        onCancel={handleCheckoutCancel}
+      />
+    );
+  }
 
   return (
     <div className="subscription-container">
@@ -113,7 +163,7 @@ function Subscription() {
 
               <div className="plan-header">
                 <h2>{plan.name}</h2>
-                {plan.trialDays && (
+                {plan.trialDays && !hasUsedTrial && (
                   <div className="trial-badge-inline">
                     <span className="trial-text-inline">{plan.trialDays} Day Free Trial</span>
                   </div>
@@ -122,7 +172,7 @@ function Subscription() {
                   <span className="price-amount">{formatPrice(plan.price)}</span>
                   <span className="price-period">/month</span>
                 </div>
-                {plan.trialDays && (
+                {plan.trialDays && !hasUsedTrial && (
                   <div className="price-after-trial-inline">
                     <span>Then {formatPrice(plan.price)}/month</span>
                   </div>
@@ -138,9 +188,17 @@ function Subscription() {
               </div>
 
               <ul className="plan-features">
-                {plan.features.map((feature, index) => (
-                  <li key={index}>{feature}</li>
-                ))}
+                {plan.features
+                  .filter(feature => {
+                    // Hide trial feature if user has already used trial
+                    if (hasUsedTrial && feature.toLowerCase().includes('trial')) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                  ))}
               </ul>
 
               <div className="plan-actions">
