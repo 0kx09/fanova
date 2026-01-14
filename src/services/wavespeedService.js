@@ -179,7 +179,7 @@ const pollForResult = async (resultUrl, maxAttempts = 60, interval = 2000) => {
 };
 
 /**
- * Generate/Edit NSFW image using Wavespeed API
+ * Generate/Edit NSFW image using backend endpoint (which handles credit deduction)
  * @param {string|File} imageInput - URL of the image to edit (or File/blob)
  * @param {string} prompt - Prompt describing the desired changes
  * @returns {Promise<string>} - URL of the generated image
@@ -190,52 +190,48 @@ export const generateNSFWImage = async (imageInput, prompt) => {
     console.log('Uploading image to get public URL...');
     const imageUrl = await uploadImageToPublicUrl(imageInput);
     console.log('Using image URL:', imageUrl);
-    
-    // Make the API request
-    const response = await fetch(WAVESPEED_API_URL, {
+
+    // Get user ID
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Call backend endpoint which handles credit deduction
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+    const response = await fetch(`${API_BASE_URL}/nsfw/generate`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WAVESPEED_API_KEY}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        enable_base64_output: false,
-        enable_sync_mode: false,
-        images: [imageUrl],
-        prompt: prompt
+        imageUrl,
+        prompt,
+        userId: user.id
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+
+      // Handle insufficient credits error
+      if (errorData.code === 'INSUFFICIENT_CREDITS') {
+        throw new Error(errorData.error || 'Insufficient credits. Please subscribe to a plan or purchase more credits.');
+      }
+
       throw new Error(errorData.error || `API error: ${response.status}`);
     }
 
     const responseData = await response.json();
-    console.log('Wavespeed API initial response:', responseData);
-    
-    // The API returns: {code: 200, message: 'success', data: {...}}
-    const data = responseData.data || responseData;
-    
-    // Check if we have a result URL to poll
-    if (data.urls && data.urls.get) {
-      console.log('Polling for result at:', data.urls.get);
-      // Poll for the result
-      const resultImageUrl = await pollForResult(data.urls.get);
-      return resultImageUrl;
-    }
-    
-    // If status is already completed, check outputs
-    if (data.status === 'completed' || data.status === 'succeeded') {
-      if (data.outputs && Array.isArray(data.outputs) && data.outputs.length > 0) {
-        const output = data.outputs[0];
-        return typeof output === 'string' ? output : (output.url || output.image_url);
-      }
+    console.log('NSFW generation response:', responseData);
+
+    if (!responseData.success || !responseData.imageUrl) {
+      throw new Error('Failed to generate NSFW image');
     }
 
-    throw new Error('Unexpected response format. No result URL found for polling.');
+    return responseData.imageUrl;
   } catch (error) {
-    console.error('Wavespeed API error:', error);
+    console.error('NSFW generation error:', error);
     throw error;
   }
 };
