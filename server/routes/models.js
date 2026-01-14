@@ -8,6 +8,8 @@ const { checkAndDeductForGeneration, getUserProfile } = require('../services/cre
 const { generateModelName } = require('../services/nameGenerator');
 const { enhancePromptWithVisualConsistency } = require('../services/imageConsistencyService');
 const { generatePromptFromImage } = require('../services/imagePromptGenerator');
+const { buildLockedGenerationPrompt, getReferenceImages, getIdentityPacket } = require('../services/identityPacketService');
+const { generateSafePrompt, logFirewallAction } = require('../services/promptFirewall');
 const supabase = require('../config/supabase');
 
 // In-memory storage for testing (no MongoDB)
@@ -141,6 +143,11 @@ router.put('/:id/facial-features', async (req, res) => {
 /**
  * POST /api/models/:id/generate-chat
  * Generate images for a model based on chat prompt
+ *
+ * ✨ NEW: IDENTITY-LOCKED GENERATION with Reference Reinjection
+ * - Every generation uses ORIGINAL reference images (never generated ones)
+ * - User prompts are filtered to allow only style changes
+ * - Identity is locked and cannot change
  */
 router.post('/:id/generate-chat', async (req, res) => {
   try {
@@ -150,6 +157,10 @@ router.post('/:id/generate-chat', async (req, res) => {
     if (!userPrompt || typeof userPrompt !== 'string') {
       return res.status(400).json({ error: 'User prompt is required' });
     }
+
+    console.log('\n🔒 === IDENTITY-LOCKED GENERATION ===');
+    console.log(`Model ID: ${id}`);
+    console.log(`User Prompt: "${userPrompt}"`);
 
     // Get model from Supabase
     const { data: model, error: fetchError } = await supabase
@@ -168,8 +179,8 @@ router.post('/:id/generate-chat', async (req, res) => {
         ...options,
         batch: numImages === 3 // Batch generation for 3 images
       });
-      
-      console.log(`Credits deducted: ${creditResult.cost}, Remaining: ${creditResult.remainingCredits}`);
+
+      console.log(`💳 Credits deducted: ${creditResult.cost}, Remaining: ${creditResult.remainingCredits}`);
     } catch (creditError) {
       return res.status(402).json({
         error: creditError.message || 'Insufficient credits',
@@ -177,91 +188,89 @@ router.post('/:id/generate-chat', async (req, res) => {
       });
     }
 
-    // Build model data
-    const modelData = {
-      age: model.age,
-      nationality: model.nationality,
-      attributes: model.attributes || {},
-      facialFeatures: model.facial_features || {}
-    };
+    // ✨ STEP 1: Run user prompt through firewall
+    const firewallResult = generateSafePrompt(userPrompt, { strict: true });
+    logFirewallAction(id, firewallResult.original, firewallResult.safePrompt, firewallResult.warnings);
 
-    // IMPORTANT: Get reference images FIRST for consistency
-    let referenceImageUrl = null;
-    let referenceImageBase64 = null;
+    if (firewallResult.blocked) {
+      console.log('🛡️ Firewall blocked identity changes:');
+      firewallResult.warnings.forEach(w => console.log(`   ${w}`));
+    }
+
+    // ✨ STEP 2: Build identity-locked generation prompt
+    let lockedPrompt;
     try {
-      const { getModelReferenceImages, imageUrlToBase64 } = require('../services/imageConsistencyService');
-      const referenceImages = await getModelReferenceImages(id);
-      
-      if (referenceImages.length > 0) {
-        referenceImageUrl = referenceImages[0];
-        console.log('📸 Found reference image for consistency');
-        
-        // Convert to base64 for Vision API
-        try {
-          referenceImageBase64 = await imageUrlToBase64(referenceImageUrl);
-          if (referenceImageBase64) {
-            console.log('✅ Reference image converted to base64 for Vision API');
-          }
-        } catch (e) {
-          console.error('⚠️ Could not convert reference image to base64:', e.message);
+      lockedPrompt = await buildLockedGenerationPrompt(id, firewallResult.safePrompt);
+      console.log('✅ Identity-locked prompt built');
+      console.log(`   Identity: ${lockedPrompt.identityPrompt.substring(0, 100)}...`);
+      console.log(`   Style: ${firewallResult.safePrompt}`);
+      console.log(`   Reference Images: ${lockedPrompt.referenceImages.length}`);
+    } catch (error) {
+      console.error('❌ Error building locked prompt:', error.message);
+
+      // Fallback to legacy method if identity packet not found
+      console.log('⚠️ Falling back to legacy generation (no identity packet)');
+      const modelData = {
+        age: model.age,
+        nationality: model.nationality,
+        attributes: model.attributes || {},
+        facialFeatures: model.facial_features || {}
+      };
+
+      const prompt = generateChatPrompt(modelData, firewallResult.safePrompt);
+      const negativePrompt = generateNegativePrompt(firewallResult.safePrompt);
+      const imageUrls = await generateImages(prompt, negativePrompt, numImages, null);
+
+      return res.json({
+        success: true,
+        images: imageUrls,
+        prompt: userPrompt,
+        fullPrompt: prompt,
+        legacy: true,
+        model: {
+          id: model.id,
+          name: model.name,
+          generationCount: (model.generation_count || 0) + numImages
         }
-      } else {
-        console.log('No reference images found for this model');
-      }
-    } catch (error) {
-      console.error('⚠️ Error fetching reference images:', error.message);
+      });
     }
 
-    // Try to enhance prompt with OpenAI first (with reference image if available)
-    let prompt;
-    try {
-      const enhancedPrompt = await enhancePromptWithOpenAI(modelData, userPrompt, referenceImageBase64);
-      if (enhancedPrompt) {
-        prompt = enhancedPrompt;
-        console.log('✅ Using OpenAI-enhanced prompt' + (referenceImageBase64 ? ' with vision' : ''));
-      } else {
-        // Fall back to default prompt generation
-        prompt = generateChatPrompt(modelData, userPrompt);
-        console.log('Using default prompt generation');
-      }
-    } catch (error) {
-      console.error('Error enhancing prompt with OpenAI, using default:', error.message);
-      // Fall back to default prompt generation
-      prompt = generateChatPrompt(modelData, userPrompt);
-      console.log('Using default prompt generation (fallback)');
+    // ✨ STEP 3: Get ORIGINAL reference images (never generated ones)
+    const referenceImages = lockedPrompt.referenceImages || [];
+    const referenceImageUrl = referenceImages.length > 0 ? referenceImages[0] : null;
+
+    if (!referenceImageUrl) {
+      console.warn('⚠️ No reference images found - identity consistency may be reduced');
+    } else {
+      console.log(`📸 Using reference image: ${referenceImageUrl.substring(0, 50)}...`);
     }
 
-    // Additional enhancement: Analyze reference image for consistency features
-    if (referenceImageUrl && !referenceImageBase64) {
-      // If we have URL but couldn't convert, try again or use URL directly
-      try {
-        prompt = await enhancePromptWithVisualConsistency(id, prompt, modelData);
-        console.log('✅ Prompt enhanced with visual consistency analysis');
-      } catch (error) {
-        console.error('⚠️ Error enhancing with visual consistency:', error.message);
-      }
-    }
+    // ✨ STEP 4: Generate images with locked identity
+    const prompt = lockedPrompt.fullPrompt;
+    const negativePrompt = generateNegativePrompt(firewallResult.safePrompt);
 
-    const negativePrompt = generateNegativePrompt(userPrompt);
+    console.log('🎨 Generating images with identity lock...');
+    console.log(`   Prompt length: ${prompt.length} chars`);
+    console.log(`   Using reference: ${!!referenceImageUrl}`);
 
-    console.log('User request:', userPrompt);
-    console.log('Final enhanced prompt:', prompt.substring(0, 200) + '...');
-
-    // Generate images (with reference image for image-to-image if available)
     const imageUrls = await generateImages(prompt, negativePrompt, numImages, referenceImageUrl);
+
+    console.log(`✅ Generated ${imageUrls.length} images with locked identity`);
+    console.log('🔒 === GENERATION COMPLETE ===\n');
 
     // NOTE: Do NOT save images automatically here for chat generation
     // Images will be saved when user selects one in the frontend
     // This prevents duplicates and ensures only selected images are saved
 
-    // Update generation count in Supabase (only for tracking, not for saving)
-    // We'll update this when the user actually saves an image
-
     res.json({
       success: true,
       images: imageUrls,
       prompt: userPrompt,
+      filteredPrompt: firewallResult.safePrompt,
       fullPrompt: prompt,
+      identityLocked: true,
+      referenceImagesUsed: referenceImages.length,
+      firewallWarnings: firewallResult.warnings,
       model: {
         id: model.id,
         name: model.name,
@@ -269,7 +278,7 @@ router.post('/:id/generate-chat', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error generating images from chat:', error);
+    console.error('❌ Error generating images from chat:', error);
     res.status(500).json({
       error: error.message || 'Failed to generate images'
     });
@@ -422,6 +431,29 @@ router.post('/:id/generate', async (req, res) => {
         error: genError.message || 'Failed to generate images. Please try again.',
         code: 'GENERATION_FAILED'
       });
+    }
+
+    // ✨ Create identity packet after first generation (if reference images provided)
+    if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+      try {
+        const { createIdentityPacket } = require('../services/identityPacketService');
+        const modelData = {
+          age: model.age,
+          nationality: model.nationality,
+          attributes: model.attributes || {},
+          facialFeatures: model.facial_features || {},
+          gender: model.gender || 'person'
+        };
+
+        // Use the first 2-4 images as reference images
+        const referenceImageUrls = imageUrls.slice(0, Math.min(4, imageUrls.length));
+
+        await createIdentityPacket(id, modelData, referenceImageUrls);
+        console.log('✅ Identity packet created with generated images as references');
+      } catch (identityError) {
+        console.error('⚠️ Error creating identity packet:', identityError.message);
+        // Don't fail the request if identity packet creation fails
+      }
     }
 
     // Update generation count in Supabase
