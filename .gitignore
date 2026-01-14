@@ -141,6 +141,10 @@ temp/
 secrets/
 credentials/
 
+# Test files (optional - uncomment if you want to exclude test tools)
+# test-email.js
+# test-email.html
+
 # Deployment
 .vercel
 .netlify

@@ -199,9 +199,10 @@ router.post('/process-payment-completion', async (req, res) => {
     const result = await handleCheckoutCompleted(session);
 
     if (!result.success) {
+      const isDevelopment = process.env.NODE_ENV !== 'production';
       return res.status(500).json({ 
         error: result.error || 'Failed to process payment',
-        details: result.details
+        ...(isDevelopment && result.details && { details: result.details }) // Only in dev
       });
     }
 
@@ -212,9 +213,10 @@ router.post('/process-payment-completion', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error processing payment completion:', error);
+    const isDevelopment = process.env.NODE_ENV !== 'production';
     res.status(500).json({ 
       error: error.message || 'Failed to process payment completion',
-      details: error.stack
+      ...(isDevelopment && { details: error.stack }) // Only show stack in development
     });
   }
 });
@@ -450,7 +452,8 @@ async function handleCheckoutCompleted(session) {
       const error = `Failed to update profile: ${updateError.message}`;
       console.error('❌', error);
       console.error('Update error details:', JSON.stringify(updateError, null, 2));
-      return { success: false, error, details: updateError };
+      return { success: false, error };
+      // Don't include updateError details in response - log server-side only
     }
 
     if (!updatedProfile) {
@@ -537,8 +540,8 @@ async function handleCheckoutCompleted(session) {
     console.error('Error stack:', error.stack);
     return { 
       success: false, 
-      error: error.message,
-      details: error.stack
+      error: error.message
+      // Don't include stack trace in response - log it server-side only
     };
   }
 }

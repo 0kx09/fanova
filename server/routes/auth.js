@@ -152,9 +152,10 @@ router.post('/ensure-profile', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error in ensure-profile:', error);
+    const isDevelopment = process.env.NODE_ENV !== 'production';
     res.status(500).json({
       error: error.message || 'Failed to ensure profile exists',
-      details: error.stack
+      ...(isDevelopment && { details: error.stack }) // Only show stack in development
     });
   }
 });

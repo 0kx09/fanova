@@ -2,11 +2,24 @@ const express = require('express');
 const router = express.Router();
 const { sendWelcomeEmail, sendFirstModelEmail, sendSubscriptionConfirmationEmail } = require('../services/emailService');
 
+// SECURITY: Only enable test routes in development
+// In production, these routes should be disabled or require admin authentication
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+// Middleware to block test routes in production
+const requireDevelopment = (req, res, next) => {
+  if (!isDevelopment) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  next();
+};
+
 /**
  * POST /api/test-email/welcome
  * Test welcome email sending
+ * SECURITY: Only available in development mode
  */
-router.post('/welcome', async (req, res) => {
+router.post('/welcome', requireDevelopment, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -36,8 +49,9 @@ router.post('/welcome', async (req, res) => {
 /**
  * POST /api/test-email/first-model
  * Test first model email sending
+ * SECURITY: Only available in development mode
  */
-router.post('/first-model', async (req, res) => {
+router.post('/first-model', requireDevelopment, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -67,8 +81,9 @@ router.post('/first-model', async (req, res) => {
 /**
  * POST /api/test-email/subscription
  * Test subscription confirmation email sending
+ * SECURITY: Only available in development mode
  */
-router.post('/subscription', async (req, res) => {
+router.post('/subscription', requireDevelopment, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -98,8 +113,9 @@ router.post('/subscription', async (req, res) => {
 /**
  * GET /api/test-email/config
  * Check Resend configuration
+ * SECURITY: Only available in development mode
  */
-router.get('/config', async (req, res) => {
+router.get('/config', requireDevelopment, async (req, res) => {
   try {
     const hasApiKey = !!process.env.RESEND_API_KEY;
     const apiKeyPrefix = process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.substring(0, 10) + '...' : 'NOT SET';
