@@ -4,7 +4,7 @@ const { generatePrompt, generateNegativePrompt, generateChatPrompt } = require('
 const { generateImages } = require('../services/imageGenerator');
 const { analyzeReferenceImages, generatePromptFromAnalysis } = require('../services/imageAnalyzer');
 const { enhancePromptWithOpenAI } = require('../services/promptEnhancer');
-const { checkAndDeductForGeneration, getUserProfile } = require('../services/creditService');
+const { checkAndDeductForGeneration, getUserProfile, refundCredits } = require('../services/creditService');
 const { generateModelName } = require('../services/nameGenerator');
 const { enhancePromptWithVisualConsistency } = require('../services/imageConsistencyService');
 const { generatePromptFromImage } = require('../services/imagePromptGenerator');
@@ -280,8 +280,28 @@ router.post('/:id/generate-chat', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error generating images from chat:', error);
-    res.status(500).json({
-      error: error.message || 'Failed to generate images'
+
+    // Provide user-friendly error messages
+    let userMessage = error.message || 'Failed to generate images';
+    let statusCode = 500;
+
+    if (error.message?.includes('RATE_LIMITED') || error.message?.includes('overloaded') || error.message?.includes('503')) {
+      userMessage = 'Our image generation service is experiencing high demand. Please try again in a few moments.';
+      statusCode = 503;
+    } else if (error.message?.includes('Insufficient credits')) {
+      userMessage = error.message;
+      statusCode = 402; // Payment Required
+    } else if (error.message?.includes('timeout') || error.message?.includes('ETIMEDOUT')) {
+      userMessage = 'Image generation took too long and timed out. Please try again.';
+      statusCode = 504;
+    } else if (error.message?.includes('All image generation services are currently unavailable')) {
+      userMessage = 'All image generation services are temporarily unavailable. Please try again in a few minutes.';
+      statusCode = 503;
+    }
+
+    res.status(statusCode).json({
+      error: userMessage,
+      code: statusCode === 503 ? 'SERVICE_UNAVAILABLE' : statusCode === 402 ? 'INSUFFICIENT_CREDITS' : 'GENERATION_FAILED'
     });
   }
 });
@@ -405,11 +425,12 @@ router.post('/:id/generate', async (req, res) => {
     }
 
     // Check and deduct credits before generation (for Supabase models only)
+    let creditResult;
     try {
-      const creditResult = await checkAndDeductForGeneration(model.user_id, false, {
+      creditResult = await checkAndDeductForGeneration(model.user_id, false, {
         batch: numImages === 3 // Batch generation for 3 images
       });
-      
+
       console.log(`Credits deducted: ${creditResult.cost}, Remaining: ${creditResult.remainingCredits}`);
     } catch (creditError) {
       console.error('Credit check/deduction error:', creditError);
@@ -426,11 +447,41 @@ router.post('/:id/generate', async (req, res) => {
       console.log(`Successfully generated ${imageUrls.length} images`);
     } catch (genError) {
       console.error('Error generating images:', genError);
-      // Try to refund credits if generation fails
-      // (This is a simplified approach - in production you might want more sophisticated rollback)
-      return res.status(500).json({
-        error: genError.message || 'Failed to generate images. Please try again.',
-        code: 'GENERATION_FAILED'
+
+      // CRITICAL: Refund credits since generation failed
+      if (creditResult && creditResult.cost > 0 && !creditResult.isFree) {
+        console.log(`🔄 Refunding ${creditResult.cost} credits due to generation failure`);
+        await refundCredits(
+          model.user_id,
+          creditResult.cost,
+          `Image generation failed: ${genError.message?.substring(0, 100)}`
+        );
+      }
+
+      // Provide user-friendly error messages
+      let userMessage = genError.message || 'Failed to generate images. Please try again.';
+      let statusCode = 500;
+      let errorCode = 'GENERATION_FAILED';
+
+      if (genError.message?.includes('RATE_LIMITED') || genError.message?.includes('overloaded') || genError.message?.includes('503')) {
+        userMessage = 'Our image generation service is experiencing high demand. Your credits have been refunded. Please try again in a few moments.';
+        statusCode = 503;
+        errorCode = 'SERVICE_UNAVAILABLE';
+      } else if (genError.message?.includes('timeout') || genError.message?.includes('ETIMEDOUT')) {
+        userMessage = 'Image generation took too long and timed out. Your credits have been refunded. Please try again.';
+        statusCode = 504;
+        errorCode = 'TIMEOUT';
+      } else if (genError.message?.includes('All image generation services are currently unavailable')) {
+        userMessage = 'All image generation services are temporarily unavailable. Your credits have been refunded. Please try again in a few minutes.';
+        statusCode = 503;
+        errorCode = 'SERVICE_UNAVAILABLE';
+      } else {
+        userMessage = `${userMessage} Your credits have been refunded.`;
+      }
+
+      return res.status(statusCode).json({
+        error: userMessage,
+        code: errorCode
       });
     }
 

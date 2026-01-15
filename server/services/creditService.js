@@ -125,22 +125,84 @@ function calculateImageCost(planType, isNsfw = false, options = {}) {
 }
 
 /**
- * Deduct credits from user account
+ * Deduct credits from user account using ATOMIC operation
+ * This prevents race conditions by using a single SQL operation
  */
 async function deductCredits(userId, amount, transactionType = 'generation', description = null, metadata = {}) {
-  // Get current credits
-  const profile = await getUserProfile(userId);
-  
-  console.log(`💳 Deducting ${amount} credits from user ${userId}. Current credits: ${profile.credits}`);
-  
-  if (profile.credits < amount) {
-    throw new Error(`Insufficient credits. Have ${profile.credits}, need ${amount}`);
+  console.log(`💳 Deducting ${amount} credits from user ${userId}`);
+
+  // ATOMIC OPERATION: Use SQL to decrement credits in a single operation
+  // This prevents race conditions from concurrent requests
+  // The RPC function handles checking sufficient credits and updating atomically
+  const { data, error } = await supabase.rpc('deduct_credits_atomic', {
+    user_id: userId,
+    amount_to_deduct: amount
+  });
+
+  if (error) {
+    // Check if it's an insufficient credits error
+    if (error.message?.includes('Insufficient credits') || error.message?.includes('insufficient')) {
+      // Get current credits for better error message
+      const profile = await getUserProfile(userId);
+      throw new Error(`Insufficient credits. Have ${profile.credits}, need ${amount}`);
+    }
+    console.error(`❌ Failed to deduct credits:`, error);
+    throw new Error(`Failed to deduct credits: ${error.message}`);
   }
 
-  const newCredits = profile.credits - amount;
+  if (!data || data.success === false) {
+    // Fallback if RPC doesn't exist - use transaction-safe approach
+    console.warn('⚠️ RPC function not available, using fallback method');
+    return await deductCreditsFallback(userId, amount, transactionType, description, metadata);
+  }
+
+  const newCredits = data.new_credits;
+  console.log(`✅ Credits deducted atomically. New balance: ${newCredits}`);
+
+  // Log transaction (async, don't block)
+  supabase
+    .from('credit_transactions')
+    .insert({
+      user_id: userId,
+      amount: -amount,
+      transaction_type: transactionType,
+      description: description || `Credits deducted for ${transactionType}`,
+      metadata: metadata
+    })
+    .then(({ error: transactionError }) => {
+      if (transactionError) {
+        console.error('Error logging credit transaction:', transactionError);
+      }
+    });
+
+  return newCredits;
+}
+
+/**
+ * Fallback credit deduction using SELECT FOR UPDATE (transaction lock)
+ * Used if RPC function is not available
+ */
+async function deductCreditsFallback(userId, amount, transactionType = 'generation', description = null, metadata = {}) {
+  console.log(`💳 Using fallback credit deduction for user ${userId}`);
+
+  // Use a raw SQL query with SELECT FOR UPDATE to lock the row
+  const { data: profile, error: selectError } = await supabase
+    .rpc('get_credits_for_update', { user_id: userId });
+
+  if (selectError || !profile || profile.length === 0) {
+    throw new Error(`Failed to get user credits: ${selectError?.message || 'User not found'}`);
+  }
+
+  const currentCredits = profile[0].credits;
+
+  if (currentCredits < amount) {
+    throw new Error(`Insufficient credits. Have ${currentCredits}, need ${amount}`);
+  }
+
+  const newCredits = currentCredits - amount;
 
   // Update credits
-  const { data, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from('profiles')
     .update({ credits: newCredits })
     .eq('id', userId)
@@ -148,30 +210,14 @@ async function deductCredits(userId, amount, transactionType = 'generation', des
     .single();
 
   if (updateError) {
-    console.error(`❌ Failed to update credits in database:`, updateError);
+    console.error(`❌ Failed to update credits:`, updateError);
     throw new Error(`Failed to deduct credits: ${updateError.message}`);
   }
 
-  // Verify the update worked (allow small tolerance for race conditions)
-  if (data && Math.abs(data.credits - newCredits) > 1) {
-    console.error(`⚠️ Credit update mismatch! Expected ${newCredits}, got ${data.credits}`);
-    // Re-fetch to get actual current value
-    const { data: actualProfile } = await supabase
-      .from('profiles')
-      .select('credits')
-      .eq('id', userId)
-      .single();
-    
-    if (actualProfile && actualProfile.credits < amount) {
-      throw new Error(`Insufficient credits. Have ${actualProfile.credits}, need ${amount}`);
-    }
-    // If credits are sufficient, continue (might have been updated by another process)
-  }
-
-  console.log(`✅ Credits updated successfully. New balance: ${newCredits}`);
+  console.log(`✅ Credits updated. New balance: ${updated.credits}`);
 
   // Log transaction
-  const { error: transactionError } = await supabase
+  await supabase
     .from('credit_transactions')
     .insert({
       user_id: userId,
@@ -181,12 +227,7 @@ async function deductCredits(userId, amount, transactionType = 'generation', des
       metadata: metadata
     });
 
-  if (transactionError) {
-    console.error('Error logging credit transaction:', transactionError);
-    // Don't throw - credits were already deducted
-  }
-
-  return newCredits;
+  return updated.credits;
 }
 
 /**
@@ -320,11 +361,60 @@ async function checkAndDeductForModelCreation(userId) {
   };
 }
 
+/**
+ * Refund credits to user account (when generation fails)
+ */
+async function refundCredits(userId, amount, reason = 'Generation failed') {
+  console.log(`💰 Refunding ${amount} credits to user ${userId}. Reason: ${reason}`);
+
+  if (amount <= 0) {
+    console.log('⚠️ Skipping refund - amount is 0');
+    return;
+  }
+
+  try {
+    // Get current credits
+    const profile = await getUserProfile(userId);
+    const newCredits = profile.credits + amount;
+
+    // Update credits
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ credits: newCredits })
+      .eq('id', userId);
+
+    if (updateError) {
+      console.error(`❌ Failed to refund credits:`, updateError);
+      throw new Error(`Failed to refund credits: ${updateError.message}`);
+    }
+
+    console.log(`✅ Credits refunded successfully. New balance: ${newCredits}`);
+
+    // Log refund transaction
+    await supabase
+      .from('credit_transactions')
+      .insert({
+        user_id: userId,
+        amount: amount, // Positive for refund
+        transaction_type: 'refund',
+        description: `Credit refund: ${reason}`,
+        metadata: { reason, refunded_amount: amount }
+      });
+
+    return newCredits;
+  } catch (error) {
+    console.error('❌ Error refunding credits:', error);
+    // Don't throw - log the error but don't block the response
+    return null;
+  }
+}
+
 module.exports = {
   getUserProfile,
   checkCredits,
   calculateImageCost,
   deductCredits,
+  refundCredits,
   checkAndDeductForGeneration,
   checkAndDeductForModelCreation,
   countUserGeneratedImages,

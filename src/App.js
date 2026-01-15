@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
+import AnnouncementBanner from './components/AnnouncementBanner';
 import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -47,6 +48,7 @@ function App() {
   return (
     <Router>
       <div className="App">
+        <AnnouncementBanner />
         <MaintenanceGuard>
           <Routes>
             {/* Maintenance page - always accessible */}
