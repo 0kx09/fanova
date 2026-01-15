@@ -53,18 +53,18 @@ function Maintenance() {
 
           {/* Headline */}
           <h1 className="maintenance-modern-title">
-            Temporarily Unavailable Due to Billing Issues
+            Scheduled Maintenance in Progress
           </h1>
 
           {/* Body text */}
           <p className="maintenance-modern-description">
-            We're experiencing some billing system issues and have temporarily taken the site offline to resolve them. We sincerely apologize for the inconvenience. Rest assured that all credits and subscriptions will be fully credited back once we're back online. We expect to be back shortly.
+            We're currently performing important updates to improve Fanova's dashboard, systems, and security. We apologize for any inconvenience and appreciate your patience. We'll be back online shortly with enhanced features and improved performance.
           </p>
 
           {/* Status badge */}
           <div className="maintenance-badge-container">
             <span className="maintenance-status-badge">
-              Status: Resolving billing issues
+              Status: Dashboard reworks & security improvements
             </span>
           </div>
 
