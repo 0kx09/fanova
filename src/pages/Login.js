@@ -34,8 +34,8 @@ function Login() {
 
       if (data.user) {
         console.log('User logged in:', data.user);
-        // Navigate to new dashboard
-        navigate('/dashboard-v2');
+        // Navigate to dashboard
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Login error:', error);

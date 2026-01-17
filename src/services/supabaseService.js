@@ -287,6 +287,35 @@ export const deleteImage = async (imageId) => {
 };
 
 /**
+ * Delete a model and its generated images
+ */
+export const deleteModel = async (modelId) => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  // Delete generated images first (foreign key)
+  const { error: imagesError } = await supabase
+    .from('generated_images')
+    .delete()
+    .eq('model_id', modelId);
+
+  if (imagesError) throw imagesError;
+
+  // Delete the model (must belong to user via RLS or explicit check)
+  const { error: modelError } = await supabase
+    .from('models')
+    .delete()
+    .eq('id', modelId)
+    .eq('user_id', user.id);
+
+  if (modelError) throw modelError;
+  return true;
+};
+
+/**
  * Get user profile with credits and subscription info
  */
 export const getUserProfile = async () => {

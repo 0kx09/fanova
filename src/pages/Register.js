@@ -129,8 +129,8 @@ function Register() {
           }, 2000);
         }
 
-        // Navigate to new dashboard
-        navigate('/dashboard-v2');
+        // Navigate to dashboard
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error('Registration error:', error);

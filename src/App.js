@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import LandingPage from './pages/LandingPage';
@@ -68,9 +68,8 @@ function App() {
             <Route path="/generation-choice" element={<><Navigation /><GenerationChoice /></>} />
             <Route path="/facial-features" element={<><Navigation /><FacialFeatures /></>} />
             <Route path="/generate-results" element={<><Navigation /><GenerateResults /></>} />
-            {/* Old dashboard - redirect to new dashboard */}
-            <Route path="/dashboard" element={<Navigate to="/dashboard-v2" replace />} />
-            {/* New Dashboard V2 (nested routes) */}
+            <Route path="/dashboard" element={<DashboardNew />} />
+            {/* Dashboard V2 (optional – at /dashboard-v2) */}
             <Route path="/dashboard-v2" element={<DashboardV2 />}>
               <Route index element={<ModelsV2 />} /> {/* Redirects to models by default */}
               <Route path="models" element={<ModelsV2 />} />

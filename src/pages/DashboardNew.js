@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { getUserModels, getUserProfile } from '../services/supabaseService';
+import { getUserModels, getUserProfile, deleteModel } from '../services/supabaseService';
 import { getPlanDetails } from '../services/pricingService';
 // import CreditRecharge from '../components/CreditRecharge'; // Disabled - credit purchasing
 import Settings from './Settings';
@@ -14,6 +14,8 @@ function DashboardNew() {
   const [loading, setLoading] = useState(true);
   const [credits, setCredits] = useState(null);
   const [subscriptionPlan, setSubscriptionPlan] = useState(null);
+  const [deleteModal, setDeleteModal] = useState({ show: false, model: null });
+  const [deleting, setDeleting] = useState(false);
   // const [showRecharge, setShowRecharge] = useState(false); // Disabled - credit purchasing
 
   const loadModels = useCallback(async () => {
@@ -87,6 +89,29 @@ function DashboardNew() {
     navigate('/model-info');
   };
 
+  const handleKebabClick = (model, e) => {
+    e.stopPropagation();
+    setDeleteModal({ show: true, model: { id: model.id, name: model.name } });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.model) return;
+    setDeleting(true);
+    try {
+      await deleteModel(deleteModal.model.id);
+      setDeleteModal({ show: false, model: null });
+      loadModels();
+    } catch (err) {
+      console.error('Error deleting model:', err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModal({ show: false, model: null });
+  };
+
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
@@ -122,6 +147,14 @@ function DashboardNew() {
           >
             <span className="sidebar-icon">🎨</span>
             <span>My Models</span>
+          </button>
+
+          <button
+            className="sidebar-item free-credits"
+            onClick={() => navigate('/dashboard-v2/free-credits')}
+          >
+            <span className="sidebar-icon">🎁</span>
+            <span>Free Credits</span>
           </button>
 
           <button
@@ -187,6 +220,18 @@ function DashboardNew() {
                       className="model-card"
                       onClick={() => handleModelClick(model)}
                     >
+                      <button
+                        className="model-card-kebab"
+                        onClick={(e) => handleKebabClick(model, e)}
+                        title="Options"
+                        aria-label="Model options"
+                      >
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="6" r="1.5" />
+                          <circle cx="12" cy="12" r="1.5" />
+                          <circle cx="12" cy="18" r="1.5" />
+                        </svg>
+                      </button>
                       {displayImage ? (
                         <div className="model-image">
                           <img src={displayImage.image_url} alt={model.name} />
@@ -213,31 +258,11 @@ function DashboardNew() {
                         </div>
                         <div className="model-stats">
                           <span>{model.generated_images?.length || 0} images</span>
-        </div>
-      </div>
-
-      {/* Credit purchasing disabled
-      {showRecharge && (
-        <CreditRecharge
-          currentCredits={credits}
-          onClose={() => setShowRecharge(false)}
-          onCreditsRecharged={async (newCredits) => {
-            setCredits(newCredits);
-            // Reload profile to get updated subscription info
-            try {
-              const profile = await getUserProfile();
-              setCredits(profile.credits);
-              setSubscriptionPlan(profile.subscription_plan);
-            } catch (error) {
-              console.error('Error reloading profile:', error);
-            }
-          }}
-        />
-      )}
-      */}
-    </div>
-  );
-})}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -249,6 +274,22 @@ function DashboardNew() {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteModal.show && deleteModal.model && (
+        <div className="delete-modal-overlay" onClick={handleDeleteCancel}>
+          <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete model?</h3>
+            <p>Are you sure you want to delete &quot;{deleteModal.model.name}&quot;? This will remove the model and all its generated images. This action cannot be undone.</p>
+            <div className="delete-modal-actions">
+              <button className="btn-cancel" onClick={handleDeleteCancel}>Cancel</button>
+              <button className="btn-delete" onClick={handleDeleteConfirm} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
