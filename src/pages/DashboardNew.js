@@ -120,32 +120,14 @@ function DashboardNew() {
           <h2>Dashboard</h2>
         </div>
 
-        <div className="credits-widget">
-          <div className="credits-gem">💎</div>
-          <div className="credits-info">
-            <span className="credits-label">Credits</span>
-            <span className="credits-value">{credits !== null ? credits : '...'}</span>
-            <span className="credits-plan">
-              {subscriptionPlan ? (getPlanDetails(subscriptionPlan)?.name || subscriptionPlan) : 'No Plan'}
-            </span>
-          </div>
-          {/* Credit purchasing disabled
-          <button
-            className="credits-recharge-btn"
-            onClick={() => setShowRecharge(true)}
-            title="Purchase more credits"
-          >
-            +
-          </button>
-          */}
-        </div>
-
         <nav className="sidebar-nav">
           <button
             className={`sidebar-item ${activeTab === 'models' ? 'active' : ''}`}
             onClick={() => setActiveTab('models')}
           >
-            <span className="sidebar-icon">🎨</span>
+            <span className="sidebar-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </span>
             <span>My Models</span>
           </button>
 
@@ -153,7 +135,9 @@ function DashboardNew() {
             className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
-            <span className="sidebar-icon">⚙️</span>
+            <span className="sidebar-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
             <span>Settings</span>
           </button>
 
@@ -161,14 +145,37 @@ function DashboardNew() {
             className="sidebar-item"
             onClick={() => navigate('/subscription')}
           >
-            <span className="sidebar-icon">💳</span>
+            <span className="sidebar-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </span>
             <span>Subscription</span>
           </button>
         </nav>
 
         <div className="sidebar-footer">
+          <div className="credits-widget">
+            <div className="credits-gem">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z"/></svg>
+            </div>
+            <div className="credits-info">
+              <span className="credits-label">Credits</span>
+              <span className="credits-value">{credits !== null ? credits : '...'}</span>
+              <span className="credits-plan">
+                {subscriptionPlan ? (getPlanDetails(subscriptionPlan)?.name || subscriptionPlan) : 'No Plan'}
+              </span>
+            </div>
+            <button
+              className="credits-recharge-btn"
+              onClick={() => navigate('/subscription')}
+              title="Get more credits"
+            >
+              +
+            </button>
+          </div>
           <button className="sidebar-item logout" onClick={handleLogout}>
-            <span className="sidebar-icon">🚪</span>
+            <span className="sidebar-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </span>
             <span>Logout</span>
           </button>
         </div>

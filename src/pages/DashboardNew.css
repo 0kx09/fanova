@@ -28,9 +28,9 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Sidebar - Ubuntu font */
+/* Sidebar - Ubuntu font, premium SaaS styling */
 .dashboard-sidebar {
-  width: 260px;
+  width: 280px;
   background: var(--dashboard-bg-secondary);
   border-right: 1px solid var(--dashboard-border);
   display: flex;
@@ -38,9 +38,10 @@
   font-family: 'Ubuntu', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+/* Header: more breathing room, fainter divider */
 .sidebar-header {
-  padding: 24px 20px;
-  border-bottom: 1px solid var(--dashboard-border);
+  padding: 28px 24px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sidebar-header h2 {
@@ -60,31 +61,103 @@
   font-size: 16px;
 }
 
-/* Credits Widget */
+/* Sidebar Navigation */
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--dashboard-text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  letter-spacing: 0;
+  font-family: 'Ubuntu', sans-serif;
+}
+
+/* Inactive: subtle white hover (5% opacity) */
+.sidebar-item:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--dashboard-text-primary);
+}
+
+.sidebar-item:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Active: soft pill — blue 10% bg, blue 100% text */
+.sidebar-item.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--dashboard-accent);
+}
+
+/* Icons: inactive #9CA3AF, active blue */
+.sidebar-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+  transition: color 0.2s ease;
+}
+
+.sidebar-item:hover:not(.active) .sidebar-icon {
+  color: #D1D5DB;
+}
+
+.sidebar-item.active .sidebar-icon {
+  color: var(--dashboard-accent);
+}
+
+/* Sticky footer: Credits + Logout pinned to bottom */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 12px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Credits Widget — bottom, above Logout. No stroke, gradient/glass, prominent number, + CTA */
 .credits-widget {
-  margin: 16px;
+  margin-bottom: 12px;
   padding: 14px 16px;
-  background: var(--dashboard-bg-elevated);
-  border: 1px solid var(--dashboard-border);
-  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(31, 31, 35, 0.95) 0%, rgba(39, 39, 42, 0.9) 100%);
+  border: none;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: border-color 0.2s ease;
-}
-
-.credits-widget:hover {
-  border-color: var(--dashboard-border-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .credits-gem {
-  font-size: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dashboard-accent);
 }
 
 .credits-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .credits-label {
@@ -97,10 +170,10 @@
 }
 
 .credits-value {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
   color: var(--dashboard-accent);
-  line-height: 1;
+  line-height: 1.1;
   letter-spacing: -0.5px;
   font-family: 'Ubuntu', sans-serif;
 }
@@ -115,11 +188,11 @@
 
 .credits-recharge-btn {
   margin-left: auto;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  border: 1px solid var(--dashboard-border-light);
-  background: var(--dashboard-bg-secondary);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(63, 63, 70, 0.8);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--dashboard-text-secondary);
   font-size: 18px;
   line-height: 1;
@@ -132,76 +205,28 @@
 }
 
 .credits-recharge-btn:hover {
-  background: var(--dashboard-bg-elevated);
-  border-color: var(--dashboard-border);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--dashboard-border-light);
   color: var(--dashboard-text-primary);
 }
 
-/* Sidebar Navigation */
-.sidebar-nav {
-  flex: 1;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--dashboard-text-secondary);
-  font-size: 13px;
-  font-weight: 400;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: left;
-  letter-spacing: 0px;
-  font-family: 'Ubuntu', sans-serif;
-}
-
-.sidebar-item:hover {
-  background: var(--dashboard-bg-elevated);
-  color: var(--dashboard-text-primary);
-}
-
-.sidebar-item:focus {
-  outline: none;
-  box-shadow: none;
-}
-
-.sidebar-item.active {
-  background: var(--dashboard-accent);
-  color: #ffffff;
-}
-
-.sidebar-icon {
-  font-size: 16px;
-  opacity: 0.8;
-}
-
-.sidebar-footer {
-  padding: 12px;
-  border-top: 1px solid var(--dashboard-border);
-}
-
+/* Logout: pinned to absolute bottom */
 .sidebar-item.logout {
   color: var(--dashboard-text-tertiary);
   font-weight: 400;
 }
 
 .sidebar-item.logout:hover {
-  background: var(--dashboard-bg-elevated);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--dashboard-text-secondary);
 }
 
 .sidebar-item.logout .sidebar-icon {
-  opacity: 0.6;
+  color: #9CA3AF;
+}
+
+.sidebar-item.logout:hover .sidebar-icon {
+  color: #D1D5DB;
 }
 
 /* Main Content Area */
@@ -574,7 +599,7 @@
 
 @media (max-width: 968px) {
   .dashboard-sidebar {
-    width: 220px;
+    width: 240px;
   }
 
   .dashboard-main {
@@ -608,7 +633,7 @@
   }
 
   .credits-widget {
-    margin: 12px;
+    margin-bottom: 12px;
   }
 
   .dashboard-main {
