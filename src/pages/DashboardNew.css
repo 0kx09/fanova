@@ -113,15 +113,6 @@
   font-family: 'Ubuntu', sans-serif;
 }
 
-/* Free Credits link in sidebar */
-.sidebar-item.free-credits {
-  color: var(--dashboard-text-secondary);
-}
-
-.sidebar-item.free-credits .sidebar-icon {
-  opacity: 0.9;
-}
-
 .credits-recharge-btn {
   margin-left: auto;
   width: 24px;

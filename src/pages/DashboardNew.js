@@ -150,14 +150,6 @@ function DashboardNew() {
           </button>
 
           <button
-            className="sidebar-item free-credits"
-            onClick={() => navigate('/dashboard-v2/free-credits')}
-          >
-            <span className="sidebar-icon">🎁</span>
-            <span>Free Credits</span>
-          </button>
-
-          <button
             className={`sidebar-item ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >

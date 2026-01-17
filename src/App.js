@@ -11,17 +11,12 @@ import GenerationChoice from './pages/GenerationChoice';
 import FacialFeatures from './pages/FacialFeatures';
 import GenerateResults from './pages/GenerateResults';
 import DashboardNew from './pages/DashboardNew';
-import DashboardV2 from './components/DashboardV2';
-import ModelsV2 from './components/ModelsV2';
-import FreeCreditsV2 from './components/FreeCreditsV2';
-import UsageV2 from './components/UsageV2';
 import ModelView from './pages/ModelView';
 import Subscription from './pages/Subscription';
 import PaymentSuccess from './pages/PaymentSuccess';
 import AdminLogin from './pages/AdminLogin';
 import AdminPanel from './pages/AdminPanel';
 import Maintenance from './pages/Maintenance';
-import Settings from './pages/Settings';
 import { MAINTENANCE_MODE, hasAdminBypass } from './config/maintenance';
 import './App.css';
 
@@ -69,14 +64,6 @@ function App() {
             <Route path="/facial-features" element={<><Navigation /><FacialFeatures /></>} />
             <Route path="/generate-results" element={<><Navigation /><GenerateResults /></>} />
             <Route path="/dashboard" element={<DashboardNew />} />
-            {/* Dashboard V2 (optional – at /dashboard-v2) */}
-            <Route path="/dashboard-v2" element={<DashboardV2 />}>
-              <Route index element={<ModelsV2 />} /> {/* Redirects to models by default */}
-              <Route path="models" element={<ModelsV2 />} />
-              <Route path="free-credits" element={<FreeCreditsV2 />} />
-              <Route path="usage" element={<UsageV2 />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/model/:modelId" element={<ModelView />} />
