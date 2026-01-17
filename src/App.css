@@ -211,6 +211,12 @@
   .App {
     padding: 16px;
   }
+  
+  /* Remove padding when dashboard is active */
+  .App .dashboard-container {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 
   .form-row {
     flex-direction: column;
