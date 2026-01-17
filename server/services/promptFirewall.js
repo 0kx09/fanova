@@ -36,7 +36,7 @@ const IDENTITY_KEYWORDS = [
 
   // Identity
   'ethnicity', 'race', 'nationality', 'look like', 'become', 'transform into',
-  'change to', 'make her', 'make him', 'turn into',
+  'change to', 'turn into',
 
   // Body type (structural changes)
   'body type', 'muscular', 'thin', 'fat', 'skinny', 'heavy', 'build',
