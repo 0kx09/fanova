@@ -46,24 +46,24 @@ async function sendApologyEmailToAll() {
     let errorCount = 0;
     const errors = [];
 
-    // Send emails in batches to avoid rate limits
-    const BATCH_SIZE = 10;
-    const DELAY_BETWEEN_BATCHES = 1000; // 1 second
+    // Resend rate limit: 2 requests per second
+    // Send emails sequentially with 600ms delay (1.67 req/sec, safely under limit)
+    const DELAY_BETWEEN_EMAILS = 600; // 600ms = 1.67 requests/second
 
-    for (let i = 0; i < validProfiles.length; i += BATCH_SIZE) {
-      const batch = validProfiles.slice(i, i + BATCH_SIZE);
-      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(validProfiles.length / BATCH_SIZE);
+    console.log(`📦 Processing ${validProfiles.length} emails sequentially to respect rate limits...\n`);
 
-      console.log(`📦 Processing batch ${batchNumber}/${totalBatches} (${batch.length} emails)...`);
+    // Send emails one at a time
+    for (let i = 0; i < validProfiles.length; i++) {
+      const profile = validProfiles[i];
+      const emailNumber = i + 1;
 
-      // Send emails in parallel for this batch
-      const batchPromises = batch.map(async (profile) => {
-        try {
-          const { data, error } = await resend.emails.send({
-            from: FROM_EMAIL,
-            to: [profile.email],
-            subject: 'We\'re Back! - Fanova Update',
+      console.log(`📧 [${emailNumber}/${validProfiles.length}] Sending to: ${profile.email}...`);
+
+      try {
+        const { data, error } = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: [profile.email],
+          subject: 'We\'re Back! - Fanova Update',
             html: `
               <!DOCTYPE html>
               <html>
@@ -183,36 +183,24 @@ async function sendApologyEmailToAll() {
               </body>
               </html>
             `,
-          });
+        });
 
-          if (error) {
-            throw error;
-          }
-
-          return { success: true, email: profile.email, data };
-        } catch (err) {
-          return { success: false, email: profile.email, error: err.message || err };
+        if (error) {
+          throw error;
         }
-      });
 
-      const batchResults = await Promise.all(batchPromises);
+        successCount++;
+        console.log(`  ✅ Successfully sent to: ${profile.email}`);
+      } catch (err) {
+        errorCount++;
+        const errorMessage = err.message || err.toString();
+        errors.push({ email: profile.email, error: errorMessage });
+        console.log(`  ❌ Failed: ${profile.email} - ${errorMessage}`);
+      }
 
-      // Count results
-      batchResults.forEach((result) => {
-        if (result.success) {
-          successCount++;
-          console.log(`  ✅ Sent to: ${result.email}`);
-        } else {
-          errorCount++;
-          errors.push({ email: result.email, error: result.error });
-          console.log(`  ❌ Failed: ${result.email} - ${result.error}`);
-        }
-      });
-
-      // Wait before next batch (except for the last one)
-      if (i + BATCH_SIZE < validProfiles.length) {
-        console.log(`⏳ Waiting ${DELAY_BETWEEN_BATCHES}ms before next batch...\n`);
-        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+      // Wait before next email (except for the last one) to respect rate limit
+      if (i < validProfiles.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_EMAILS));
       }
     }
 
