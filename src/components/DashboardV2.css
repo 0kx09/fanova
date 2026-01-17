@@ -1,10 +1,19 @@
+/* Override body dark background when dashboard is active */
+body:has(.dashboard-container),
+html:has(.dashboard-container),
+body:has(.dashboard-container) body,
+html:has(.dashboard-container) body {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
 .dashboard-container {
   display: flex;
   width: 100vw;
   min-width: 100vw;
   height: 100vh;
   min-height: 100vh;
-  background-color: #ffffff;
+  background-color: #ffffff !important;
   position: fixed;
   top: 0;
   left: 0;
@@ -16,7 +25,8 @@
   padding: 0 !important;
   box-sizing: border-box;
   overflow: hidden;
-  z-index: 1;
+  z-index: 9999;
+  color: #1a1a1a !important;
 }
 
 /* Force light mode for dashboard - override dark mode */
