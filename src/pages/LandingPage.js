@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SUBSCRIPTION_PLANS } from '../services/pricingService';
 import './LandingPage.css';
 
 function LandingPage() {
@@ -200,18 +201,17 @@ function LandingPage() {
           <div className="pricing-grid">
             <div className="pricing-card">
               <div className="pricing-header">
-                <h3 className="pricing-tier">Base Plan</h3>
+                <h3 className="pricing-tier">{SUBSCRIPTION_PLANS.base.name}</h3>
                 <div className="pricing-price">
-                  <span className="price-currency">£</span>
-                  <span className="price-amount">9.99</span>
-                  <span className="price-period">/month</span>
+                  <span className="price-amount">{SUBSCRIPTION_PLANS.base.price === 0 ? 'Free' : `£${SUBSCRIPTION_PLANS.base.price.toFixed(2)}`}</span>
+                  {SUBSCRIPTION_PLANS.base.price > 0 && <span className="price-period">/month</span>}
                 </div>
               </div>
               <ul className="pricing-features">
-                <li>50 credits per month</li>
-                <li>Watermarked images</li>
-                <li>Custom AI models</li>
-                <li>Email support</li>
+                <li>{SUBSCRIPTION_PLANS.base.monthlyCredits} credits per month</li>
+                {SUBSCRIPTION_PLANS.base.features.slice(1, 4).map((feature, idx) => (
+                  <li key={idx}>{feature}</li>
+                ))}
               </ul>
               <button className="pricing-btn" onClick={handleGetStarted}>
                 Get Started
