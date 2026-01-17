@@ -384,7 +384,10 @@
   color: #f3f4f6;
 }
 
-/* Dark Mode Styles */
+/* Dark Mode Styles - DISABLED for dashboard (force light mode) */
+/* All dark mode styles are overridden by .dashboard-container selectors above */
+/* Keeping this section for reference but these won't apply to dashboard */
+
 .dark .models-title {
   color: #f3f4f6;
 }
@@ -450,6 +453,89 @@
 
 .dark .models-empty-message {
   color: #94a3b8;
+}
+
+/* Force light mode for dashboard - override all dark styles */
+.dashboard-container .models-title,
+.dark .dashboard-container .models-title {
+  color: #1a1a1a !important;
+}
+
+.dashboard-container .models-subheader,
+.dark .dashboard-container .models-subheader {
+  color: #666666 !important;
+}
+
+.dashboard-container .models-search-input,
+.dark .dashboard-container .models-search-input {
+  background-color: #ffffff !important;
+  border-color: #e5e5e5 !important;
+  color: #1a1a1a !important;
+}
+
+.dashboard-container .models-search-input::placeholder,
+.dark .dashboard-container .models-search-input::placeholder {
+  color: #999999 !important;
+}
+
+.dashboard-container .models-sort-select,
+.dark .dashboard-container .models-sort-select {
+  background-color: #ffffff !important;
+  border-color: #e5e5e5 !important;
+  color: #1a1a1a !important;
+}
+
+.dashboard-container .model-card,
+.dark .dashboard-container .model-card {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dashboard-container .model-card:hover,
+.dark .dashboard-container .model-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.dashboard-container .model-image,
+.dark .dashboard-container .model-image {
+  background-color: #f5f5f5 !important;
+}
+
+.dashboard-container .model-image-placeholder,
+.dark .dashboard-container .model-image-placeholder {
+  background: linear-gradient(135deg, #e8e8e8 0%, #f0f0f0 100%) !important;
+  color: #999999 !important;
+}
+
+.dashboard-container .model-name,
+.dark .dashboard-container .model-name {
+  color: #1a1a1a !important;
+}
+
+.dashboard-container .model-kebab-menu,
+.dark .dashboard-container .model-kebab-menu {
+  color: #666666 !important;
+}
+
+.dashboard-container .model-kebab-menu:hover,
+.dark .dashboard-container .model-kebab-menu:hover {
+  background-color: #f0f0f0 !important;
+  color: #1a1a1a !important;
+}
+
+.dashboard-container .model-meta,
+.dark .dashboard-container .model-meta {
+  color: #999999 !important;
+}
+
+.dashboard-container .models-empty-title,
+.dark .dashboard-container .models-empty-title {
+  color: #1a1a1a !important;
+}
+
+.dashboard-container .models-empty-message,
+.dark .dashboard-container .models-empty-message {
+  color: #666666 !important;
 }
 
 @keyframes spin {
