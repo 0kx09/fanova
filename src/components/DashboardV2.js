@@ -2,10 +2,8 @@ import React, { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Sidebar from './SidebarV2';
+import logo from '../logo.png';
 import './DashboardV2.css';
-// Note: You may need to copy logo.png from the other project to src/logo.png
-// Or update this path to use an existing logo
-// import logo from '../logo.png';
 
 function Dashboard() {
   const location = useLocation();
@@ -46,9 +44,7 @@ function Dashboard() {
         <button className="mobile-menu-btn" onClick={handleMenuClick}>
           ≡
         </button>
-        {/* Logo - update path as needed */}
-        <div className="mobile-logo-text" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Fanova</div>
-        {/* <img src={logo} alt="Fanova" className="mobile-logo" /> */}
+        <img src={logo} alt="Fanova" className="mobile-logo" />
         <div className="mobile-user-avatar">
           <span>U</span>
         </div>

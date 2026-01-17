@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { getUserProfile } from '../services/supabaseService';
+import logo from '../logo.png';
 import './SidebarV2.css';
 
 function Sidebar({ activePage, isOpen, onClose }) {
@@ -89,11 +90,7 @@ function Sidebar({ activePage, isOpen, onClose }) {
   return (
     <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
       <div className="sidebar-header">
-        <div className="sidebar-logo-text" style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1a1a1a' }}>
-          Fanova
-        </div>
-        {/* Uncomment if you have logo.png in src/ */}
-        {/* <img src={logo} alt="Fanova" className="sidebar-logo" /> */}
+        <img src={logo} alt="Fanova" className="sidebar-logo" />
       </div>
       <nav className="sidebar-nav">
         <ul className="sidebar-menu">
