@@ -1,10 +1,24 @@
-/* Override body dark background when dashboard is active */
+/* Override body dark background when dashboard is active - MUST be first */
+body.dashboard-active,
+html.dashboard-active,
+body.dashboard-active #root,
+html.dashboard-active #root,
 body:has(.dashboard-container),
 html:has(.dashboard-container),
-body:has(.dashboard-container) body,
-html:has(.dashboard-container) body {
+body:has(.dashboard-container) #root {
   background-color: #ffffff !important;
   background: #ffffff !important;
+  color: #1a1a1a !important;
+}
+
+/* Also override any dark mode on body/html */
+.dashboard-active.dark body,
+.dashboard-active.dark html,
+.dark body.dashboard-active,
+.dark html.dashboard-active {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #1a1a1a !important;
 }
 
 .dashboard-container {

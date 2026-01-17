@@ -23,27 +23,34 @@ function Dashboard() {
 
   // Force light mode - remove dark class and override body styles when dashboard loads
   React.useEffect(() => {
+    // Add a class to body/html to indicate dashboard is active
+    document.body.classList.add('dashboard-active');
+    document.documentElement.classList.add('dashboard-active');
+    
     // Remove dark class from html and body
     document.documentElement.classList.remove('dark');
     document.body.classList.remove('dark');
     
     // Force body background to white via inline style (highest specificity)
-    const originalBodyBg = document.body.style.background;
-    const originalBodyColor = document.body.style.color;
     document.body.style.setProperty('background', '#ffffff', 'important');
     document.body.style.setProperty('background-color', '#ffffff', 'important');
     document.body.style.setProperty('color', '#1a1a1a', 'important');
     
     // Also override html background
-    const originalHtmlBg = document.documentElement.style.background;
     document.documentElement.style.setProperty('background', '#ffffff', 'important');
     document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
     
+    // Force override on #root as well
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.setProperty('background', '#ffffff', 'important');
+      root.style.setProperty('background-color', '#ffffff', 'important');
+    }
+    
     return () => {
-      // Optionally restore on unmount (but not needed if other pages handle it)
-      // document.body.style.background = originalBodyBg;
-      // document.body.style.color = originalBodyColor;
-      // document.documentElement.style.background = originalHtmlBg;
+      // Clean up on unmount
+      document.body.classList.remove('dashboard-active');
+      document.documentElement.classList.remove('dashboard-active');
     };
   }, []);
 
