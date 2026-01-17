@@ -187,7 +187,7 @@ function DashboardNew() {
           <div className="models-view">
             <div className="view-header">
               <h1>My Models</h1>
-              <button className="btn-primary" onClick={handleCreateNew}>
+              <button className="btn-primary btn-create" onClick={handleCreateNew}>
                 + Create New Model
               </button>
             </div>
