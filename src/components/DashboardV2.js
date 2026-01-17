@@ -31,20 +31,20 @@ function Dashboard() {
     document.documentElement.classList.remove('dark');
     document.body.classList.remove('dark');
     
-    // Force body background to white via inline style (highest specificity)
-    document.body.style.setProperty('background', '#ffffff', 'important');
-    document.body.style.setProperty('background-color', '#ffffff', 'important');
+    // Force body background to light grey to match models area (highest specificity)
+    document.body.style.setProperty('background', '#f5f5f5', 'important');
+    document.body.style.setProperty('background-color', '#f5f5f5', 'important');
     document.body.style.setProperty('color', '#1a1a1a', 'important');
     
     // Also override html background
-    document.documentElement.style.setProperty('background', '#ffffff', 'important');
-    document.documentElement.style.setProperty('background-color', '#ffffff', 'important');
+    document.documentElement.style.setProperty('background', '#f5f5f5', 'important');
+    document.documentElement.style.setProperty('background-color', '#f5f5f5', 'important');
     
-    // Force override on #root as well
+    // Force override on #root as well so no dark shows through
     const root = document.getElementById('root');
     if (root) {
-      root.style.setProperty('background', '#ffffff', 'important');
-      root.style.setProperty('background-color', '#ffffff', 'important');
+      root.style.setProperty('background', '#f5f5f5', 'important');
+      root.style.setProperty('background-color', '#f5f5f5', 'important');
     }
     
     return () => {

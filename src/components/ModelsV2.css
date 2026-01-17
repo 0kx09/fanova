@@ -3,6 +3,8 @@
 .models-page {
   width: 100%;
   min-height: 100%;
+  background-color: #f5f5f5 !important;
+  background: #f5f5f5 !important;
 }
 
 /* Header Section */
@@ -207,6 +209,8 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.5rem;
   width: 100%;
+  background-color: #f5f5f5 !important;
+  background: #f5f5f5 !important;
 }
 
 /* Model Card */
@@ -345,6 +349,8 @@
   justify-content: center;
   min-height: 400px;
   padding: 3rem 1rem;
+  background-color: #f5f5f5 !important;
+  background: #f5f5f5 !important;
 }
 
 .models-empty-content {
