@@ -217,18 +217,36 @@ export const generateImagesFromUploadedImage = async (modelId, imageBase64, numI
 /**
  * Update the locked reference image for a model
  * This is the image selected by the user that will be used for all future generations
+ * @param {string} modelId - The model ID
+ * @param {string|null} imageUrl - The image URL (optional if imageId is provided)
+ * @param {string|null} imageId - The generated_images table ID (optional if imageUrl is provided)
  */
-export const updateLockedReferenceImage = async (modelId, imageUrl) => {
+export const updateLockedReferenceImage = async (modelId, imageUrl = null, imageId = null) => {
+  const body = {};
+  if (imageId) {
+    body.imageId = imageId;
+  } else if (imageUrl) {
+    body.imageUrl = imageUrl;
+  } else {
+    throw new Error('Either imageUrl or imageId must be provided');
+  }
+
   const response = await fetch(`${API_BASE_URL}/models/${modelId}/locked-reference-image`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ imageUrl }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const errorText = await response.text();
+    let error;
+    try {
+      error = JSON.parse(errorText);
+    } catch {
+      error = { error: errorText || 'Failed to update locked reference image' };
+    }
     throw new Error(error.error || 'Failed to update locked reference image');
   }
 

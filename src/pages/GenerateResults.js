@@ -204,8 +204,11 @@ function GenerateResults() {
       console.log(`🔒 Locking image ${selectedImageIndex + 1} as reference for model ${modelId}`);
 
       // Update model with locked reference image via backend API
+      // Use dbId (image ID) if available to avoid sending large base64 URLs
       try {
-        await updateLockedReferenceImage(modelId, selectedImage.url);
+        const imageId = selectedImage.dbId;
+        // If dbId is available, send it instead of the URL (avoids 413 errors with base64)
+        await updateLockedReferenceImage(modelId, imageId ? null : selectedImage.url, imageId);
         console.log('✅ Reference image locked successfully');
       } catch (updateError) {
         console.error('Error saving locked reference:', updateError);

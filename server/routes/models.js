@@ -718,10 +718,30 @@ router.post('/generate-name', async (req, res) => {
 router.put('/:id/locked-reference-image', async (req, res) => {
   try {
     const { id } = req.params;
-    const { imageUrl } = req.body;
+    const { imageUrl, imageId } = req.body;
 
-    if (!imageUrl) {
-      return res.status(400).json({ error: 'Image URL is required' });
+    // Allow either imageUrl or imageId to be provided
+    // If imageId is provided, fetch the URL from generated_images table
+    let finalImageUrl = imageUrl;
+
+    if (imageId && !imageUrl) {
+      // Fetch image URL from generated_images table using imageId
+      const { data: imageData, error: imageError } = await supabase
+        .from('generated_images')
+        .select('image_url')
+        .eq('id', imageId)
+        .eq('model_id', id)
+        .single();
+
+      if (imageError || !imageData) {
+        return res.status(404).json({ error: 'Generated image not found' });
+      }
+
+      finalImageUrl = imageData.image_url;
+    }
+
+    if (!finalImageUrl) {
+      return res.status(400).json({ error: 'Image URL or Image ID is required' });
     }
 
     // Verify model exists
@@ -739,7 +759,7 @@ router.put('/:id/locked-reference-image', async (req, res) => {
     const { error: updateError } = await supabase
       .from('models')
       .update({
-        locked_reference_image: imageUrl
+        locked_reference_image: finalImageUrl
       })
       .eq('id', id);
 
