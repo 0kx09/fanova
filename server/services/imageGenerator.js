@@ -298,13 +298,32 @@ async function generateWithGoogleImagen(prompt, negativePrompt, numImages = 3, r
     return images;
   } catch (error) {
     console.error('Google Gemini generation error:', error.response?.data || error.message);
+    console.error('Error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message,
+      stack: error.stack
+    });
 
     // Provide more specific error messages
     if (error.response?.status === 503 || error.response?.data?.error?.status === 'UNAVAILABLE') {
       throw new Error('RATE_LIMITED'); // Special error code for fallback
     }
 
-    throw new Error('Failed to generate images with Google Gemini');
+    // If error is related to image input and we have a reference image,
+    // throw a special error to trigger fallback to Fal.ai (which supports image-to-image)
+    if (referenceImageUrl && (
+      error.response?.status === 400 ||
+      error.response?.data?.error?.message?.includes('image') ||
+      error.response?.data?.error?.message?.includes('invalid') ||
+      error.response?.data?.error?.message?.includes('not supported')
+    )) {
+      console.warn('⚠️ Google Imagen does not support reference images in this model. Falling back to Fal.ai...');
+      throw new Error('REFERENCE_IMAGE_NOT_SUPPORTED'); // Special error to trigger Fal.ai fallback
+    }
+
+    throw new Error(`Failed to generate images with Google Gemini: ${error.response?.data?.error?.message || error.message}`);
   }
 }
 
@@ -364,13 +383,17 @@ async function generateImages(prompt, negativePrompt, numImages = 3, referenceIm
     } catch (error) {
       lastError = error;
 
-      // Check if this is a rate limit error
+      // Check if this is a rate limit error or reference image not supported
       const isRateLimited = error.message === 'RATE_LIMITED' ||
                            error.response?.status === 503 ||
                            error.response?.status === 429;
+      
+      const isReferenceImageNotSupported = error.message === 'REFERENCE_IMAGE_NOT_SUPPORTED';
 
       if (isRateLimited) {
         console.warn(`⚠️ ${provider.name} is rate-limited or overloaded. Trying next provider...`);
+      } else if (isReferenceImageNotSupported) {
+        console.warn(`⚠️ ${provider.name} does not support reference images. Trying next provider...`);
       } else {
         console.error(`❌ ${provider.name} failed:`, error.message);
       }
