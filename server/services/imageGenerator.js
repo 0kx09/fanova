@@ -149,10 +149,46 @@ async function retryWithBackoff(fn, maxRetries = 3, baseDelay = 2000) {
 }
 
 /**
+ * Convert image URL to base64 for Google Imagen API
+ */
+async function imageUrlToBase64(imageUrl) {
+  try {
+    // If it's already a data URL, extract the base64 part
+    if (imageUrl.startsWith('data:')) {
+      const base64Match = imageUrl.match(/data:image\/(\w+);base64,(.+)/);
+      if (base64Match) {
+        return {
+          mimeType: `image/${base64Match[1]}`,
+          data: base64Match[2]
+        };
+      }
+    }
+
+    // Fetch the image and convert to base64
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 10000
+    });
+
+    const base64 = Buffer.from(response.data).toString('base64');
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    
+    return {
+      mimeType: contentType,
+      data: base64
+    };
+  } catch (error) {
+    console.error('Error converting image URL to base64:', error.message);
+    return null;
+  }
+}
+
+/**
  * Generate images using Google Gemini 3 Pro Image API (Nano Banana Pro)
  * WITH RETRY LOGIC for rate limiting and overload errors
+ * ✨ NOW SUPPORTS REFERENCE IMAGES for identity consistency
  */
-async function generateWithGoogleImagen(prompt, negativePrompt, numImages = 3) {
+async function generateWithGoogleImagen(prompt, negativePrompt, numImages = 3, referenceImageUrl = null) {
   const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
   if (!GOOGLE_API_KEY) {
@@ -160,22 +196,58 @@ async function generateWithGoogleImagen(prompt, negativePrompt, numImages = 3) {
   }
 
   try {
+    // Convert reference image to base64 if provided
+    let referenceImageBase64 = null;
+    if (referenceImageUrl) {
+      console.log('📸 Converting reference image to base64 for Google Imagen...');
+      referenceImageBase64 = await imageUrlToBase64(referenceImageUrl);
+      if (!referenceImageBase64) {
+        console.warn('⚠️ Failed to convert reference image, proceeding without it');
+      } else {
+        console.log('✅ Reference image prepared for Google Imagen');
+      }
+    }
+
     const images = [];
 
     // Gemini 3 Pro Image generates one image at a time
     for (let i = 0; i < numImages; i++) {
       // Wrap each image generation in retry logic
       const imageUrl = await retryWithBackoff(async () => {
+        // Build parts array - include reference image if available
+        const parts = [];
+        
+        // Add reference image first if available
+        if (referenceImageBase64) {
+          parts.push({
+            inlineData: {
+              mimeType: referenceImageBase64.mimeType,
+              data: referenceImageBase64.data
+            }
+          });
+        }
+        
+        // Add prompt text (with reference instruction if image provided)
+        let promptText = prompt;
+        if (referenceImageBase64) {
+          // Explicitly tell the model to use the reference image for identity
+          promptText = `Using the reference image provided above for facial features and identity, ${prompt}`;
+        }
+        
+        if (negativePrompt) {
+          promptText += `\n\nAvoid: ${negativePrompt}`;
+        }
+        
+        parts.push({
+          text: promptText
+        });
+
         const response = await axios.post(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent`,
           {
             contents: [
               {
-                parts: [
-                  {
-                    text: prompt + (negativePrompt ? `\n\nAvoid: ${negativePrompt}` : '')
-                  }
-                ]
+                parts: parts
               }
             ],
             generationConfig: {
@@ -246,25 +318,35 @@ async function generateWithGoogleImagen(prompt, negativePrompt, numImages = 3) {
  */
 async function generateImages(prompt, negativePrompt, numImages = 3, referenceImageUrl = null) {
   const providers = [
-    {
-      name: 'Google Imagen',
-      check: () => process.env.GOOGLE_API_KEY,
-      generate: () => generateWithGoogleImagen(prompt, negativePrompt, numImages)
-    },
+          {
+            name: 'Google Imagen',
+            check: () => process.env.GOOGLE_API_KEY,
+            generate: () => generateWithGoogleImagen(prompt, negativePrompt, numImages, referenceImageUrl),
+            supportsImageToImage: true
+          },
     {
       name: 'Fal.ai',
       check: () => process.env.FAL_AI_KEY,
-      generate: () => generateWithFalAi(prompt, negativePrompt, numImages, referenceImageUrl)
+      generate: () => generateWithFalAi(prompt, negativePrompt, numImages, referenceImageUrl),
+      supportsImageToImage: true
     },
     {
       name: 'Replicate',
       check: () => process.env.REPLICATE_API_TOKEN,
-      generate: () => generateWithReplicate(prompt, negativePrompt, numImages)
+      generate: () => generateWithReplicate(prompt, negativePrompt, numImages),
+      supportsImageToImage: false
     }
   ];
 
   // Filter to only available providers
-  const availableProviders = providers.filter(p => p.check());
+  let availableProviders = providers.filter(p => p.check());
+
+  // ✨ CRITICAL: If referenceImageUrl is provided (locked reference exists),
+  // Both Google Imagen and Fal.ai now support reference images, so order doesn't matter as much
+  // But Fal.ai's image-to-image with strength parameter may provide better consistency
+  if (referenceImageUrl) {
+    console.log('🔒 Locked reference image detected - using image-to-image generation');
+  }
 
   if (availableProviders.length === 0) {
     throw new Error('No image generation API configured');
