@@ -61,10 +61,12 @@ Provide a detailed description including:
 - Body type and build
 - Fashion style and clothing (casual, elegant, athletic, provocative, modest, etc.)
 - Clothing coverage level (revealing, modest, average)
+- Makeup and cosmetics: Describe any visible makeup including lipstick/lip gloss color, eyeshadow, mascara, eyeliner, foundation, blush, contouring, brow styling, nail polish if visible. Note the makeup style (natural, glamorous, bold, minimal, etc.)
+- Styling details: Hair styling, accessories (jewelry, piercings), overall grooming and presentation style
 - Any distinctive visual elements
 - Mood and atmosphere
 
-Be VERY specific about colors, proportions, and visual details. Pay special attention to getting the GENDER and hair color correct. This is for creating fictional artwork.`
+Be VERY specific about colors, proportions, and visual details. Pay special attention to getting the GENDER, hair color, and makeup style correct. Include makeup details even if minimal or natural-looking. This is for creating fictional artwork.`
               },
               {
                 inline_data: {
@@ -118,7 +120,7 @@ Focus on the ACTUAL visual details that appear consistently across all 3 images.
 
 Respond in ONLY valid JSON format (no markdown, no code blocks):
 {
-  "mergedDescription": "A unified character description combining consistent visual elements from all 3 references",
+  "mergedDescription": "A unified character description combining consistent visual elements from all 3 references, including makeup and styling details",
   "attributes": {
     "gender": "Male or Female",
     "hair_color": "extracted value",
@@ -130,7 +132,10 @@ Respond in ONLY valid JSON format (no markdown, no code blocks):
     "distinctive_features": "extracted value",
     "style_aesthetic": "extracted value",
     "clothing_style": "extracted value (casual/elegant/athletic/provocative/modest)",
-    "clothing_coverage": "extracted value (revealing/modest/average)"
+    "clothing_coverage": "extracted value (revealing/modest/average)",
+    "makeup_style": "extracted value (natural/minimal/glamorous/bold/heavy/none)",
+    "makeup_details": "detailed description of makeup including lipstick color, eyeshadow, mascara, etc. or 'no visible makeup' if none",
+    "styling_details": "hair styling, accessories, grooming details"
   }
 }`
           }]

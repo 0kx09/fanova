@@ -194,6 +194,22 @@ function AttributesConfirmation() {
                     </select>
                   )
 
+                  /* Makeup style dropdown */
+                  : key === 'makeup_style' ? (
+                    <select
+                      value={value}
+                      onChange={(e) => handleAttributeChange(key, e.target.value)}
+                      className="attribute-input"
+                    >
+                      <option value="natural">Natural</option>
+                      <option value="minimal">Minimal</option>
+                      <option value="glamorous">Glamorous</option>
+                      <option value="bold">Bold</option>
+                      <option value="heavy">Heavy</option>
+                      <option value="none">No Makeup</option>
+                    </select>
+                  )
+
                   /* Default text input for other attributes */
                   : (
                     <input

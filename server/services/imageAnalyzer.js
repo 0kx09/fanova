@@ -172,6 +172,27 @@ function generatePromptFromAnalysis(analysis, additionalAttributes = {}) {
     promptParts.push(analysis.distinctiveFeatures);
   }
 
+  // Makeup from analysis or additional attributes
+  if (analysis.makeupDetails || additionalAttributes.makeup_details) {
+    const makeupDetails = analysis.makeupDetails || additionalAttributes.makeup_details;
+    if (makeupDetails && makeupDetails !== 'no visible makeup' && makeupDetails !== 'none') {
+      promptParts.push(`makeup: ${makeupDetails}`);
+    }
+  } else if (analysis.makeupStyle || additionalAttributes.makeup_style) {
+    const makeupStyle = analysis.makeupStyle || additionalAttributes.makeup_style;
+    if (makeupStyle && makeupStyle !== 'none' && makeupStyle !== 'no makeup') {
+      promptParts.push(`${makeupStyle} makeup`);
+    }
+  }
+
+  // Styling details (hair styling, accessories, grooming)
+  if (analysis.stylingDetails || additionalAttributes.styling_details) {
+    const stylingDetails = analysis.stylingDetails || additionalAttributes.styling_details;
+    if (stylingDetails) {
+      promptParts.push(stylingDetails);
+    }
+  }
+
   // Style from additional attributes
   if (additionalAttributes.style) {
     promptParts.push(`wearing ${additionalAttributes.style} outfit`);

@@ -1,13 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { SUBSCRIPTION_PLANS } from '../services/pricingService';
 import './LandingPage.css';
 
 function LandingPage() {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const checkAuth = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleGetStarted = () => {
-    navigate('/login');
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
   };
 
   const handleLearnMore = () => {
@@ -27,12 +58,22 @@ function LandingPage() {
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
-            <button className="nav-btn-secondary" onClick={() => navigate('/login')}>
-              Sign In
-            </button>
-            <button className="nav-btn-primary" onClick={handleGetStarted}>
-              Get Started
-            </button>
+            {!loading && (
+              isAuthenticated ? (
+                <button className="nav-btn-primary" onClick={() => navigate('/dashboard')}>
+                  Dashboard
+                </button>
+              ) : (
+                <>
+                  <button className="nav-btn-secondary" onClick={() => navigate('/login')}>
+                    Sign In
+                  </button>
+                  <button className="nav-btn-primary" onClick={handleGetStarted}>
+                    Get Started
+                  </button>
+                </>
+              )
+            )}
           </div>
         </div>
       </nav>
