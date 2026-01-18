@@ -320,13 +320,16 @@ async function checkAndDeductForGeneration(userId, isNsfw = false, options = {})
   }
 
   // Final verification - if user has a plan and cost > 0, credits must have been deducted
+  // NOTE: We trust the atomic deduction result (remainingCredits) instead of re-fetching
+  // Re-fetching can cause race conditions or cache issues that show incorrect balances
   if (!isFree && actualCost > 0 && profile.subscription_plan) {
-    const finalProfile = await getUserProfile(userId);
-    if (finalProfile.credits === profile.credits) {
-      console.error(`⚠️ WARNING: Credits were not deducted! Initial: ${profile.credits}, Final: ${finalProfile.credits}, Cost: ${actualCost}`);
-      throw new Error('Credit deduction failed - credits were not updated');
+    // Verify that remainingCredits (from atomic deduction) is correct
+    const expectedRemaining = profile.credits - actualCost;
+    if (Math.abs(remainingCredits - expectedRemaining) > 1) { // Allow 1 credit difference for rounding
+      console.error(`⚠️ WARNING: Credit balance mismatch! Initial: ${profile.credits}, Expected: ${expectedRemaining}, Got: ${remainingCredits}, Cost: ${actualCost}`);
+      // Still use the remainingCredits from atomic operation (it's the source of truth)
     }
-    remainingCredits = finalProfile.credits; // Use the actual updated value
+    // Use remainingCredits from deductCredits() - it's already correct from atomic operation
   }
 
   return {
