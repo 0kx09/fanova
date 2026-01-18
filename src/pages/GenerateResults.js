@@ -179,6 +179,7 @@ function GenerateResults() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
   const [showPlanSelection, setShowPlanSelection] = useState(false);
   const [hasSubscriptionPlan, setHasSubscriptionPlan] = useState(null);
+  const [promptExpanded, setPromptExpanded] = useState(false);
 
   const handleSelectImage = (index) => {
     setSelectedImageIndex(index);
@@ -212,8 +213,7 @@ function GenerateResults() {
       const { error: updateError } = await supabase
         .from('models')
         .update({
-          locked_reference_image: selectedImage.url,
-          selected_image_id: selectedImage.dbId
+          locked_reference_image: selectedImage.url
         })
         .eq('id', modelId)
         .eq('user_id', user.id);
@@ -302,7 +302,15 @@ function GenerateResults() {
               {generatedPrompt && (
                 <div className="prompt-display">
                   <strong>Generated Prompt:</strong>
-                  <p>{generatedPrompt}</p>
+                  <p className={promptExpanded ? 'expanded' : 'truncated'}>
+                    {generatedPrompt}
+                  </p>
+                  <button
+                    className="prompt-toggle-btn"
+                    onClick={() => setPromptExpanded(!promptExpanded)}
+                  >
+                    {promptExpanded ? 'Show less' : 'View all'}
+                  </button>
                 </div>
               )}
             </div>

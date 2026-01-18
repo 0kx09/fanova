@@ -53,16 +53,18 @@ router.post('/analyze-reference-images', async (req, res) => {
 Analyze this reference photo and create a comprehensive character description that captures the visual aesthetic and style. This will be used to generate original artwork.
 
 Provide a detailed description including:
+- Gender: Male or Female (IMPORTANT: Get this right!)
 - Overall aesthetic and vibe
 - Hair: EXACT color (be accurate!), length, style, texture
 - Facial features and structure
 - Skin tone and complexion
 - Body type and build
-- Fashion style and clothing colors
+- Fashion style and clothing (casual, elegant, athletic, provocative, modest, etc.)
+- Clothing coverage level (revealing, modest, average)
 - Any distinctive visual elements
 - Mood and atmosphere
 
-Be VERY specific about colors, proportions, and visual details. Pay special attention to getting the hair color correct. This is for creating fictional artwork.`
+Be VERY specific about colors, proportions, and visual details. Pay special attention to getting the GENDER and hair color correct. This is for creating fictional artwork.`
               },
               {
                 inline_data: {
@@ -118,6 +120,7 @@ Respond in ONLY valid JSON format (no markdown, no code blocks):
 {
   "mergedDescription": "A unified character description combining consistent visual elements from all 3 references",
   "attributes": {
+    "gender": "Male or Female",
     "hair_color": "extracted value",
     "hair_style": "extracted value",
     "eye_color": "extracted value",
@@ -125,7 +128,9 @@ Respond in ONLY valid JSON format (no markdown, no code blocks):
     "face_shape": "extracted value",
     "body_type": "extracted value",
     "distinctive_features": "extracted value",
-    "style_aesthetic": "extracted value"
+    "style_aesthetic": "extracted value",
+    "clothing_style": "extracted value (casual/elegant/athletic/provocative/modest)",
+    "clothing_coverage": "extracted value (revealing/modest/average)"
   }
 }`
           }]
@@ -155,7 +160,8 @@ Respond in ONLY valid JSON format (no markdown, no code blocks):
 
     // Create the final generation prompt with iPhone-quality requirements
     // CRITICAL: This creates close-up portraits with clear face visibility for reference image locking
-    const generationPrompt = `${mergedData.mergedDescription}. Close-up portrait shot, face clearly visible from shoulders up, taken with iPhone camera quality with natural imperfections and slight grain, natural daylight lighting, shallow depth of field, photorealistic, 4K resolution, clear eyes and hair details captured.`;
+    // IMPORTANT: Front-facing selfie (passport photo style), NOT mirror reflection
+    const generationPrompt = `${mergedData.mergedDescription}. Front-facing close-up selfie portrait, passport photo style, person looking directly at camera, face clearly visible from shoulders up, NOT a mirror selfie or reflection, direct camera angle, taken with iPhone front camera quality with natural imperfections and slight grain, natural daylight lighting, shallow depth of field, photorealistic, 4K resolution, clear eyes and hair details captured.`;
 
     res.json({
       success: true,

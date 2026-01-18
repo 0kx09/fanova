@@ -151,12 +151,58 @@ function AttributesConfirmation() {
                   <label className="attribute-label">
                     {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </label>
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => handleAttributeChange(key, e.target.value)}
-                    className="attribute-input"
-                  />
+
+                  {/* Gender dropdown */}
+                  {key === 'gender' ? (
+                    <select
+                      value={value}
+                      onChange={(e) => handleAttributeChange(key, e.target.value)}
+                      className="attribute-input"
+                    >
+                      <option value="Female">Female</option>
+                      <option value="Male">Male</option>
+                    </select>
+                  )
+
+                  /* Clothing coverage dropdown */
+                  : key === 'clothing_coverage' ? (
+                    <select
+                      value={value}
+                      onChange={(e) => handleAttributeChange(key, e.target.value)}
+                      className="attribute-input"
+                    >
+                      <option value="modest">Modest (Conservative)</option>
+                      <option value="average">Average (Standard)</option>
+                      <option value="revealing">Revealing (Provocative)</option>
+                    </select>
+                  )
+
+                  /* Clothing style dropdown */
+                  : key === 'clothing_style' ? (
+                    <select
+                      value={value}
+                      onChange={(e) => handleAttributeChange(key, e.target.value)}
+                      className="attribute-input"
+                    >
+                      <option value="casual">Casual</option>
+                      <option value="elegant">Elegant</option>
+                      <option value="athletic">Athletic</option>
+                      <option value="modest">Modest</option>
+                      <option value="provocative">Provocative</option>
+                      <option value="professional">Professional</option>
+                      <option value="streetwear">Streetwear</option>
+                    </select>
+                  )
+
+                  /* Default text input for other attributes */
+                  : (
+                    <input
+                      type="text"
+                      value={value}
+                      onChange={(e) => handleAttributeChange(key, e.target.value)}
+                      className="attribute-input"
+                    />
+                  )}
                 </div>
               ))}
             </div>

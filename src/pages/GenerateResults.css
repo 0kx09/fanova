@@ -167,6 +167,37 @@
   margin: 0;
 }
 
+.prompt-display p.truncated {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 3.2em; /* 2 lines * 1.6 line-height */
+}
+
+.prompt-display p.expanded {
+  display: block;
+}
+
+.prompt-toggle-btn {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prompt-toggle-btn:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary-color);
+}
+
 /* Results Header */
 .results-header {
   text-align: center;
