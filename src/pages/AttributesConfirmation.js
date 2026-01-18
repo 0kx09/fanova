@@ -40,15 +40,26 @@ function AttributesConfirmation() {
         throw new Error('You must be logged in to create a model');
       }
 
+      // Parse and validate age - convert empty string to null for integer field
+      let ageValue = null;
+      if (age && age !== '') {
+        const parsedAge = parseInt(age);
+        if (!isNaN(parsedAge) && parsedAge >= 18) {
+          ageValue = parsedAge;
+        } else if (!isNaN(parsedAge) && parsedAge < 18) {
+          throw new Error('Age must be 18 or older');
+        }
+      }
+
       // Create model in database
       const { data: model, error: modelError } = await supabase
         .from('models')
         .insert({
           user_id: user.id,
           name: name,
-          age: age,
-          nationality: nationality,
-          occupation: occupation,
+          age: ageValue, // Use parsed age or null, never empty string
+          nationality: nationality || null, // Convert empty string to null
+          occupation: occupation || null, // Convert empty string to null
           attributes: attributes,
           ai_analysis: analysis,
           merged_prompt: mergedPrompt,
