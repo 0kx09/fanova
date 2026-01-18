@@ -28,13 +28,13 @@ router.post('/analyze-reference-images', async (req, res) => {
       });
     }
 
-    console.log(`🔍 Analyzing 3 reference images for model: ${modelName} using GPT-5`);
+    // Use GPT-5 Nano for fast, cost-effective image analysis
+    let visionModel = process.env.OPENAI_VISION_MODEL || "gpt-5-nano-2025-08-07";
 
-    // Analyze each image individually with GPT-5 Vision
+    console.log(`🔍 Analyzing 3 reference images for model: ${modelName} using ${visionModel}`);
+
+    // Analyze each image individually with GPT-5 Nano Vision
     const analysis = [];
-
-    // Try GPT-5 first, fallback to GPT-4o if not available
-    let visionModel = process.env.OPENAI_VISION_MODEL || "gpt-5";
 
     for (let i = 0; i < images.length; i++) {
       console.log(`Analyzing image ${i + 1}/3 with ${visionModel}...`);
@@ -49,16 +49,21 @@ router.post('/analyze-reference-images', async (req, res) => {
             content: [
               {
                 type: "text",
-                text: `Analyze this image in extreme detail for AI image generation. Describe:
-1. Physical appearance (face shape, skin tone, features)
-2. Hair (color, length, style, texture)
-3. Eyes (color, shape, size)
-4. Facial features (nose, lips, cheekbones, jawline)
-5. Body type and build
-6. Style and aesthetic
-7. Distinctive features
+                text: `You are an AI art director helping to create fictional character descriptions for image generation.
 
-Be very specific and detailed. This will be used to generate consistent AI images.`
+Based on this reference photo, create a detailed character description that captures the visual aesthetic and style. This will be used to generate original artwork of a fictional character with similar visual characteristics.
+
+Describe:
+- Overall aesthetic and vibe
+- Hair: color, length, style, texture
+- General facial features and structure
+- Skin tone and complexion
+- Body type and build
+- Fashion style and clothing
+- Color palette and visual themes
+- Artistic style and mood
+
+Write a detailed prompt suitable for AI image generation. This is for creating original fictional artwork, not recreating or identifying any real person.`
               },
               {
                 type: "image_url",
@@ -72,7 +77,7 @@ Be very specific and detailed. This will be used to generate consistent AI image
         max_tokens: 500
         });
       } catch (modelError) {
-        // If GPT-5 fails (not available yet), fallback to GPT-4o
+        // If GPT-5 Nano fails, fallback to GPT-4o
         if (modelError.status === 404 || modelError.message?.includes('model') || modelError.message?.includes('gpt-5')) {
           console.log(`⚠️ ${visionModel} not available, falling back to gpt-4o...`);
           visionModel = "gpt-4o";
@@ -85,16 +90,21 @@ Be very specific and detailed. This will be used to generate consistent AI image
                 content: [
                   {
                     type: "text",
-                    text: `Analyze this image in extreme detail for AI image generation. Describe:
-1. Physical appearance (face shape, skin tone, features)
-2. Hair (color, length, style, texture)
-3. Eyes (color, shape, size)
-4. Facial features (nose, lips, cheekbones, jawline)
-5. Body type and build
-6. Style and aesthetic
-7. Distinctive features
+                    text: `You are an AI art director helping to create fictional character descriptions for image generation.
 
-Be very specific and detailed. This will be used to generate consistent AI images.`
+Based on this reference photo, create a detailed character description that captures the visual aesthetic and style. This will be used to generate original artwork of a fictional character with similar visual characteristics.
+
+Describe:
+- Overall aesthetic and vibe
+- Hair: color, length, style, texture
+- General facial features and structure
+- Skin tone and complexion
+- Body type and build
+- Fashion style and clothing
+- Color palette and visual themes
+- Artistic style and mood
+
+Write a detailed prompt suitable for AI image generation. This is for creating original fictional artwork, not recreating or identifying any real person.`
                   },
                   {
                     type: "image_url",
@@ -129,26 +139,29 @@ Be very specific and detailed. This will be used to generate consistent AI image
         },
         {
           role: "user",
-          content: `I have 3 detailed descriptions of the same person from different images.
-Please:
-1. Identify the CONSISTENT attributes across all 3 descriptions
-2. Create a merged, unified description that captures the person's core appearance
-3. Extract key attributes in a structured format
+          content: `You are creating a unified character description for AI artwork generation based on 3 reference descriptions.
 
-Here are the 3 descriptions:
+Here are 3 detailed character descriptions from different reference images:
 
-IMAGE 1:
+DESCRIPTION 1:
 ${analysis[0]}
 
-IMAGE 2:
+DESCRIPTION 2:
 ${analysis[1]}
 
-IMAGE 3:
+DESCRIPTION 3:
 ${analysis[2]}
 
-Please respond in the following JSON format:
+Task:
+1. Identify CONSISTENT visual themes and characteristics across all 3 descriptions
+2. Create a merged, unified character description for AI image generation
+3. Extract key attributes in a structured format
+
+This is for generating original fictional character artwork. Focus on the artistic style and visual aesthetic.
+
+Respond in the following JSON format:
 {
-  "mergedDescription": "A unified description combining consistent features from all 3 images",
+  "mergedDescription": "A unified character description combining consistent visual elements from all 3 references",
   "attributes": {
     "hair_color": "extracted value",
     "hair_style": "extracted value",
@@ -220,7 +233,7 @@ router.post('/enhance-prompt', async (req, res) => {
       });
     }
 
-    const chatModel = process.env.OPENAI_CHAT_MODEL || "gpt-5";
+    const chatModel = process.env.OPENAI_CHAT_MODEL || "gpt-5-nano-2025-08-07";
 
     let response;
     try {
