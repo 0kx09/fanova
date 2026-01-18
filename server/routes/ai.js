@@ -158,10 +158,23 @@ Respond in ONLY valid JSON format (no markdown, no code blocks):
     const mergedData = JSON.parse(mergedText);
     console.log('✅ Analysis merged successfully');
 
+    // Clean the merged description to remove mirror selfie references
+    let cleanedDescription = mergedData.mergedDescription || '';
+    // Remove mirror/mirror selfie references
+    cleanedDescription = cleanedDescription
+      .replace(/mirror\s+selfie/gi, 'selfie')
+      .replace(/mirror\s+reflection/gi, 'direct view')
+      .replace(/reflection\s+in\s+mirror/gi, 'direct camera view')
+      .replace(/standing\s+in\s+front\s+of\s+mirror/gi, 'standing directly in front of camera')
+      .replace(/viewing\s+reflection/gi, 'looking directly at camera')
+      .replace(/full\s+length\s+mirror/gi, 'direct camera angle')
+      .replace(/mirror/gi, 'direct camera');
+
     // Create the final generation prompt with iPhone-quality requirements
     // CRITICAL: This creates close-up portraits with clear face visibility for reference image locking
     // IMPORTANT: Front-facing selfie (passport photo style), NOT mirror reflection
-    const generationPrompt = `${mergedData.mergedDescription}. Front-facing close-up selfie portrait, passport photo style, person looking directly at camera, face clearly visible from shoulders up, NOT a mirror selfie or reflection, direct camera angle, taken with iPhone front camera quality with natural imperfections and slight grain, natural daylight lighting, shallow depth of field, photorealistic, 4K resolution, clear eyes and hair details captured.`;
+    // Make it attractive and beautiful
+    const generationPrompt = `Beautiful, attractive ${cleanedDescription}. Front-facing close-up selfie portrait, passport photo style, person looking directly at camera, face clearly visible from shoulders up, NOT a mirror selfie or reflection, no mirror visible, direct camera angle, attractive features, beautiful appearance, photogenic, taken with iPhone front camera quality with natural imperfections and slight grain, natural daylight lighting, soft flattering light, shallow depth of field, photorealistic, 4K resolution, clear eyes and hair details captured, high quality, professional photo aesthetic.`;
 
     res.json({
       success: true,

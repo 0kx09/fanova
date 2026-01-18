@@ -392,8 +392,16 @@ router.post('/:id/generate', async (req, res) => {
     let prompt;
     const negativePrompt = generateNegativePrompt(''); // No user prompt for initial generation
 
-    // Check if reference images are provided
-    if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+    // ✨ CRITICAL: Use Gemini's merged_prompt if available (from /api/ai/analyze-reference-images)
+    // This ensures we always use Gemini-generated prompts, not pre-made ones
+    if (model.merged_prompt) {
+      prompt = model.merged_prompt;
+      console.log('✅ Using Gemini-generated merged_prompt from model');
+      console.log(`Prompt length: ${prompt.length} chars`);
+    } else if (referenceImages && Array.isArray(referenceImages) && referenceImages.length > 0) {
+      // Fallback: If no merged_prompt but reference images provided, analyze them
+      // This shouldn't normally happen if the flow is correct, but handle it gracefully
+      console.warn('⚠️ No merged_prompt found, but reference images provided. Analyzing with Gemini...');
       console.log(`Analyzing ${referenceImages.length} reference images...`);
 
       try {
@@ -414,25 +422,11 @@ router.post('/:id/generate', async (req, res) => {
         console.log('Generated prompt from reference images:', prompt);
       } catch (analysisError) {
         console.error('Error analyzing reference images:', analysisError);
-        // Fallback to describe method
-        const modelData = {
-          age: model.age,
-          attributes: model.attributes || {},
-          facialFeatures: model.facial_features || {}
-        };
-        prompt = generatePrompt(modelData);
-        console.log('Using fallback prompt from model attributes');
+        throw new Error('Failed to analyze reference images. Please ensure the model was created with reference images through the proper flow.');
       }
     } else {
-      // No reference images - use describe method
-      const modelData = {
-        age: model.age,
-        attributes: model.attributes || {},
-        facialFeatures: model.facial_features || {}
-      };
-
-      prompt = generatePrompt(modelData);
-      console.log('Generated prompt from model attributes:', prompt);
+      // No merged_prompt and no reference images - this should not happen for new models
+      throw new Error('Model missing merged_prompt. Please recreate the model with reference images through the proper flow.');
     }
 
     // Check and deduct credits before generation (for Supabase models only)

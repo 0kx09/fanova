@@ -862,6 +862,40 @@
   margin: 0;
 }
 
+.prompt-display p.truncated {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-height: 3.2em !important; /* 2 lines * 1.6 line-height */
+  word-wrap: break-word;
+}
+
+.prompt-display p.expanded {
+  display: block !important;
+  max-height: none !important;
+  -webkit-line-clamp: none !important;
+}
+
+.prompt-toggle-btn {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #27272A;
+  border-radius: 4px;
+  color: #2563EB;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.prompt-toggle-btn:hover {
+  background: #27272A;
+  border-color: #2563EB;
+}
+
 /* Action Buttons */
 .action-buttons {
   display: flex;
