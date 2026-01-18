@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { createCheckoutSession } from '../services/stripeService';
-import { ensureProfile } from '../services/authService';
 import './EmbeddedCheckout.css';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
@@ -27,12 +26,8 @@ function EmbeddedCheckoutComponent({ priceId, modelId, selectedImageId, planType
     setError(null);
 
     try {
-      console.log('Ensuring user profile exists...');
-      // CRITICAL FIX: Ensure profile exists before creating checkout session
-      // This prevents "user not found" errors
-      await ensureProfile();
-      console.log('Profile verified');
-
+      // Profile existence is handled by Supabase trigger
+      // ensureProfile() not called since it's not deployed to production yet
       console.log('Creating checkout session with:', { priceId, modelId, selectedImageId, planType });
 
       // Add timeout to prevent infinite loading

@@ -76,19 +76,8 @@ function Register() {
         // Registration successful
         console.log('User registered:', data.user);
 
-        // CRITICAL: Ensure profile is created immediately
-        // This bypasses RLS issues by using the backend service role
-        try {
-          const { ensureProfile } = await import('../services/authService');
-          await ensureProfile();
-          console.log('✅ Profile created successfully');
-        } catch (profileError) {
-          console.error('❌ Failed to create profile:', profileError);
-          // This is critical - show error and don't proceed
-          setError('Account created but profile setup failed. Please contact support.');
-          setLoading(false);
-          return;
-        }
+        // Profile creation is handled by Supabase trigger
+        // No need to call ensureProfile since it's not deployed yet
 
         // Note: Referral is processed by database trigger automatically
         // The trigger reads the referral_code from user metadata and processes it
