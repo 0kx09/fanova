@@ -111,24 +111,7 @@ function GenerateResults() {
           setImagesGenerated(images.length);
           setGeneratedPrompt(response.prompt || '');
           console.log('Images generated successfully:', images);
-
-          // Save images to Supabase
-          try {
-            const imageUrls = response.images;
-            const savedImages = await saveGeneratedImages(modelId, imageUrls, response.prompt || '');
-            console.log('Images saved to Supabase:', savedImages);
-
-            // Store the saved image IDs so we can reference them later
-            const imagesWithDbIds = images.map((img, index) => ({
-              ...img,
-              dbId: savedImages[index].id
-            }));
-            setGeneratedImages(imagesWithDbIds);
-          } catch (dbError) {
-            console.error('Error saving images to Supabase:', dbError);
-            // Don't fail the whole process if Supabase save fails
-            // User can still see and select images
-          }
+          // Note: Images are NOT saved to Supabase yet - only the selected image will be saved
         } else {
           throw new Error('Failed to generate images');
         }
@@ -200,19 +183,34 @@ function GenerateResults() {
         return;
       }
 
-      // CRITICAL: Save this image as the LOCKED REFERENCE IMAGE
-      console.log(`🔒 Locking image ${selectedImageIndex + 1} as reference for model ${modelId}`);
+      // CRITICAL: Save ONLY the selected image to Supabase, then lock it as reference
+      console.log(`💾 Saving selected image ${selectedImageIndex + 1} to database...`);
 
-      // Update model with locked reference image via backend API
-      // Use dbId (image ID) if available to avoid sending large base64 URLs
+      // Save only the selected image to generated_images table
+      let savedImage;
       try {
-        const imageId = selectedImage.dbId;
-        // If dbId is available, send it instead of the URL (avoids 413 errors with base64)
-        await updateLockedReferenceImage(modelId, imageId ? null : selectedImage.url, imageId);
+        const savedImages = await saveGeneratedImages(
+          modelId,
+          [selectedImage.url], // Only save the selected image
+          generatedPrompt || ''
+        );
+        savedImage = savedImages[0];
+        console.log('✅ Selected image saved to database:', savedImage);
+      } catch (saveError) {
+        console.error('Error saving selected image:', saveError);
+        alert('Failed to save selected image. Please try again.');
+        return;
+      }
+
+      // Lock this image as the reference image
+      console.log(`🔒 Locking image as reference for model ${modelId}`);
+      try {
+        // Use the saved image ID to avoid sending large base64 URLs
+        await updateLockedReferenceImage(modelId, null, savedImage.id);
         console.log('✅ Reference image locked successfully');
       } catch (updateError) {
-        console.error('Error saving locked reference:', updateError);
-        alert('Failed to save reference image. Please try again.');
+        console.error('Error locking reference image:', updateError);
+        alert('Failed to lock reference image. Please try again.');
         return;
       }
 
