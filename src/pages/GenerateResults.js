@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './ModelPages.css';
-import { generateModelImages } from '../services/api';
+import { generateModelImages, updateLockedReferenceImage } from '../services/api';
 import { saveGeneratedImages, getModel, getUserProfile } from '../services/supabaseService';
 import { supabase } from '../lib/supabase';
 import PlanSelection from '../components/PlanSelection';
@@ -203,28 +203,15 @@ function GenerateResults() {
       // CRITICAL: Save this image as the LOCKED REFERENCE IMAGE
       console.log(`🔒 Locking image ${selectedImageIndex + 1} as reference for model ${modelId}`);
 
-      // Update model with locked reference image
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert('Please log in to continue');
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('models')
-        .update({
-          locked_reference_image: selectedImage.url
-        })
-        .eq('id', modelId)
-        .eq('user_id', user.id);
-
-      if (updateError) {
+      // Update model with locked reference image via backend API
+      try {
+        await updateLockedReferenceImage(modelId, selectedImage.url);
+        console.log('✅ Reference image locked successfully');
+      } catch (updateError) {
         console.error('Error saving locked reference:', updateError);
         alert('Failed to save reference image. Please try again.');
         return;
       }
-
-      console.log('✅ Reference image locked successfully');
 
       // Check if user has subscription plan
       const profile = await getUserProfile();

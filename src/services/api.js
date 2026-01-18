@@ -213,3 +213,24 @@ export const generateImagesFromUploadedImage = async (modelId, imageBase64, numI
 
   return response.json();
 };
+
+/**
+ * Update the locked reference image for a model
+ * This is the image selected by the user that will be used for all future generations
+ */
+export const updateLockedReferenceImage = async (modelId, imageUrl) => {
+  const response = await fetch(`${API_BASE_URL}/models/${modelId}/locked-reference-image`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ imageUrl }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update locked reference image');
+  }
+
+  return response.json();
+};

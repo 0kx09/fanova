@@ -711,6 +711,62 @@ router.post('/generate-name', async (req, res) => {
 });
 
 /**
+ * PUT /api/models/:id/locked-reference-image
+ * Update the locked reference image for a model
+ * This is the image selected by the user that will be used for all future generations
+ */
+router.put('/:id/locked-reference-image', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      return res.status(400).json({ error: 'Image URL is required' });
+    }
+
+    // Verify model exists
+    const { data: model, error: fetchError } = await supabase
+      .from('models')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !model) {
+      return res.status(404).json({ error: 'Model not found' });
+    }
+
+    // Update locked reference image using service role (bypasses RLS)
+    const { error: updateError } = await supabase
+      .from('models')
+      .update({
+        locked_reference_image: imageUrl
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      console.error('Error updating locked reference image:', updateError);
+      return res.status(500).json({
+        error: 'Failed to update locked reference image',
+        details: updateError.message
+      });
+    }
+
+    console.log(`✅ Locked reference image updated for model ${id}`);
+
+    res.json({
+      success: true,
+      message: 'Locked reference image updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating locked reference image:', error);
+    res.status(500).json({
+      error: 'Failed to update locked reference image',
+      message: error.message
+    });
+  }
+});
+
+/**
  * POST /api/models/:id/generate-from-image
  * Generate images based on an uploaded image
  * Analyzes the image with Vision API and generates similar images using the model
