@@ -88,9 +88,16 @@ function filterPrompt(userPrompt) {
   const warnings = [];
   const blockedKeywords = [];
 
-  // Check for identity-changing keywords
+  // Check for identity-changing keywords (whole word only, not substring)
   for (const keyword of IDENTITY_KEYWORDS) {
-    if (lowercasePrompt.includes(keyword.toLowerCase())) {
+    // Use word boundary regex to match whole words only, not substrings
+    const keywordLower = keyword.toLowerCase();
+    // Create regex pattern that matches whole word (handles multi-word keywords too)
+    const keywordPattern = keywordLower.includes(' ') 
+      ? new RegExp(`\\b${keywordLower.replace(/\s+/g, '\\s+')}\\b`, 'i')
+      : new RegExp(`\\b${keywordLower}\\b`, 'i');
+    
+    if (keywordPattern.test(lowercasePrompt)) {
       blockedKeywords.push(keyword);
       warnings.push(`⚠️ Blocked identity change: "${keyword}"`);
     }
@@ -100,16 +107,20 @@ function filterPrompt(userPrompt) {
   let filteredPrompt = userPrompt;
 
   if (blockedKeywords.length > 0) {
-    // Remove sentences containing blocked keywords
-    const sentences = userPrompt.split(/[.!?]+/);
+    // Remove sentences containing blocked keywords (whole word only)
+    const sentences = userPrompt.split(/[.!?,]+/);
     const filteredSentences = sentences.filter(sentence => {
       const lowerSentence = sentence.toLowerCase();
-      return !IDENTITY_KEYWORDS.some(keyword =>
-        lowerSentence.includes(keyword.toLowerCase())
-      );
+      return !IDENTITY_KEYWORDS.some(keyword => {
+        const keywordLower = keyword.toLowerCase();
+        const keywordPattern = keywordLower.includes(' ')
+          ? new RegExp(`\\b${keywordLower.replace(/\s+/g, '\\s+')}\\b`, 'i')
+          : new RegExp(`\\b${keywordLower}\\b`, 'i');
+        return keywordPattern.test(lowerSentence);
+      });
     });
 
-    filteredPrompt = filteredSentences.join('. ').trim();
+    filteredPrompt = filteredSentences.join(', ').trim();
 
     // If everything was filtered out, return a safe default
     if (!filteredPrompt) {
