@@ -42,13 +42,19 @@ function AttributesConfirmation() {
 
       // Parse and validate age - convert empty string to null for integer field
       let ageValue = null;
-      if (age && age !== '') {
-        const parsedAge = parseInt(age);
+      const ageStr = typeof age === 'string' ? age.trim() : String(age || '').trim();
+      if (ageStr && ageStr !== '') {
+        const parsedAge = parseInt(ageStr, 10);
         if (!isNaN(parsedAge) && parsedAge >= 18) {
           ageValue = parsedAge;
         } else if (!isNaN(parsedAge) && parsedAge < 18) {
           throw new Error('Age must be 18 or older');
         }
+      }
+
+      // Ensure ageValue is null, not undefined or empty string
+      if (ageValue === undefined || ageValue === '') {
+        ageValue = null;
       }
 
       // Create model in database
