@@ -18,6 +18,7 @@ const adminRouter = require('./routes/admin');
 const referralsRouter = require('./routes/referrals');
 const nsfwRouter = require('./routes/nsfw');
 const testEmailRouter = require('./routes/test-email');
+const aiRouter = require('./routes/ai');
 app.use('/api/auth', authRouter);
 app.use('/api/models', modelsRouter);
 app.use('/api/stripe', stripeRouter);
@@ -25,6 +26,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/nsfw', nsfwRouter);
 app.use('/api/test-email', testEmailRouter);
+app.use('/api/ai', aiRouter);
 
 // Health check
 app.get('/health', (req, res) => {

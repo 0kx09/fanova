@@ -1,10 +1,13 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
+import AnnouncementBanner from './components/AnnouncementBanner';
 import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ModelInfo from './pages/ModelInfo';
+import ReferenceImagesUpload from './pages/ReferenceImagesUpload';
+import AttributesConfirmation from './pages/AttributesConfirmation';
 import ModelAttributes from './pages/ModelAttributes';
 import GenerationChoice from './pages/GenerationChoice';
 import FacialFeatures from './pages/FacialFeatures';
@@ -47,6 +50,7 @@ function App() {
   return (
     <Router>
       <div className="App">
+        <AnnouncementBanner />
         <MaintenanceGuard>
           <Routes>
             {/* Maintenance page - always accessible */}
@@ -56,10 +60,17 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+
+            {/* NEW MODEL CREATION FLOW */}
             <Route path="/model-info" element={<><Navigation /><ModelInfo /></>} />
+            <Route path="/reference-images-upload" element={<ReferenceImagesUpload />} />
+            <Route path="/attributes-confirmation" element={<AttributesConfirmation />} />
+
+            {/* OLD FLOW (keep for backward compatibility) */}
             <Route path="/model-attributes" element={<><Navigation /><ModelAttributes /></>} />
             <Route path="/generation-choice" element={<><Navigation /><GenerationChoice /></>} />
             <Route path="/facial-features" element={<><Navigation /><FacialFeatures /></>} />
+
             <Route path="/generate-results" element={<><Navigation /><GenerateResults /></>} />
             <Route path="/dashboard" element={<DashboardNew />} />
             <Route path="/subscription" element={<Subscription />} />

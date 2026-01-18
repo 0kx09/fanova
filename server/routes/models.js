@@ -236,14 +236,25 @@ router.post('/:id/generate-chat', async (req, res) => {
       });
     }
 
-    // ✨ STEP 3: Get ORIGINAL reference images (never generated ones)
-    const referenceImages = lockedPrompt.referenceImages || [];
-    const referenceImageUrl = referenceImages.length > 0 ? referenceImages[0] : null;
+    // ✨ STEP 3: Use LOCKED REFERENCE IMAGE for perfect consistency
+    // This is the single image the user selected as their reference
+    let referenceImageUrl = model.locked_reference_image;
+
+    // Fallback to original reference images if no locked image
+    if (!referenceImageUrl) {
+      const referenceImages = lockedPrompt.referenceImages || [];
+      referenceImageUrl = referenceImages.length > 0 ? referenceImages[0] : null;
+      if (referenceImageUrl) {
+        console.log('⚠️ No locked reference image, using first uploaded image as fallback');
+      }
+    } else {
+      console.log(`🔒 Using LOCKED reference image for perfect consistency`);
+    }
 
     if (!referenceImageUrl) {
       console.warn('⚠️ No reference images found - identity consistency may be reduced');
     } else {
-      console.log(`📸 Using reference image: ${referenceImageUrl.substring(0, 50)}...`);
+      console.log(`📸 Reference image: ${referenceImageUrl.substring(0, 50)}...`);
     }
 
     // ✨ STEP 4: Generate images with locked identity

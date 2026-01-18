@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ModelPages.css';
-import { createModel } from '../services/supabaseService';
 import { generateModelName } from '../services/api';
 
 function ModelInfo() {
@@ -57,17 +56,12 @@ function ModelInfo() {
         return;
       }
 
-      // Create model in Supabase
-      const model = await createModel(modelData);
-
-      // Store modelId for later use
-      localStorage.setItem('currentModelId', model.id);
-      console.log('Model created in Supabase with ID:', model.id);
-
-      navigate('/model-attributes');
+      // NEW FLOW: Don't create model yet, just pass data to reference images upload
+      // Model will be created AFTER images are analyzed
+      navigate('/reference-images-upload', { state: modelData });
     } catch (error) {
-      console.error('Error creating model:', error);
-      alert(error.message || 'Failed to create model. Please try again.');
+      console.error('Error:', error);
+      alert(error.message || 'Failed to proceed. Please try again.');
       setLoading(false);
     }
   };
@@ -75,14 +69,14 @@ function ModelInfo() {
   return (
     <div className="model-info-container">
       <div className="progress-steps">
-        <div className="progress-step active">1. Model Info</div>
-        <div className="progress-step">2. Attributes</div>
-        <div className="progress-step">3. Generation</div>
+        <div className="progress-step active">1. Basic Info</div>
+        <div className="progress-step">2. Upload Images</div>
+        <div className="progress-step">3. Review & Generate</div>
       </div>
 
       <div className="model-info-card">
         <h2>Model Information</h2>
-        <p className="section-subtitle">Tell us about your AI model</p>
+        <p className="section-subtitle">Let's start by adding some basic information about your model</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-row">

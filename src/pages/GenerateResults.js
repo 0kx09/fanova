@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './ModelPages.css';
 import { generateModelImages } from '../services/api';
-import { saveGeneratedImages, selectModelImage, getModel, getUserProfile } from '../services/supabaseService';
+import { saveGeneratedImages, getModel, getUserProfile } from '../services/supabaseService';
+import { supabase } from '../lib/supabase';
 import PlanSelection from '../components/PlanSelection';
 
 function GenerateResults() {
@@ -185,44 +186,59 @@ function GenerateResults() {
 
   const handleConfirmSelection = async () => {
     if (selectedImageIndex === null) {
-      alert('Please select an image first');
+      alert('Please select an image to use as your reference first');
       return;
     }
 
     try {
-      // Check if user already has a subscription plan
+      const modelId = location.state?.modelId || localStorage.getItem('currentModelId');
+      const selectedImage = generatedImages[selectedImageIndex];
+
+      if (!modelId || !selectedImage) {
+        alert('Error: Model or image data not found');
+        return;
+      }
+
+      // CRITICAL: Save this image as the LOCKED REFERENCE IMAGE
+      console.log(`🔒 Locking image ${selectedImageIndex + 1} as reference for model ${modelId}`);
+
+      // Update model with locked reference image
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('Please log in to continue');
+        return;
+      }
+
+      const { error: updateError } = await supabase
+        .from('models')
+        .update({
+          locked_reference_image: selectedImage.url,
+          selected_image_id: selectedImage.dbId
+        })
+        .eq('id', modelId)
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Error saving locked reference:', updateError);
+        alert('Failed to save reference image. Please try again.');
+        return;
+      }
+
+      console.log('✅ Reference image locked successfully');
+
+      // Check if user has subscription plan
       const profile = await getUserProfile();
-      
+
       if (profile.subscription_plan && profile.subscription_plan !== null) {
-        // User already has a plan - just save the selected image and go to dashboard
-        const modelId = location.state?.modelId || localStorage.getItem('currentModelId');
-        const selectedImage = generatedImages[selectedImageIndex];
-        
-        if (modelId && selectedImage) {
-          try {
-            // Save the selected image if we have a dbId
-            if (selectedImage.dbId) {
-              await selectModelImage(modelId, selectedImage.dbId);
-            } else if (selectedImage.url) {
-              // If no dbId, the image might not be saved yet - try to save it
-              console.log('Selected image has no dbId, but user has plan - proceeding to dashboard');
-            }
-          } catch (error) {
-            console.error('Error selecting model image:', error);
-            // Continue to dashboard even if image selection fails
-          }
-        }
-        
-        // Navigate to dashboard
+        // User has plan - go to dashboard
         navigate('/dashboard');
       } else {
         // No plan - show plan selection
         setShowPlanSelection(true);
       }
     } catch (error) {
-      console.error('Error checking subscription plan:', error);
-      // If we can't check, show plan selection as fallback
-      setShowPlanSelection(true);
+      console.error('Error confirming selection:', error);
+      alert('An error occurred. Please try again.');
     }
   };
 
@@ -276,10 +292,13 @@ function GenerateResults() {
         ) : (
           <>
             <div className="results-header">
-              <h2>Your AI Model Images</h2>
+              <h2>Select Your Reference Image</h2>
               <p className="section-subtitle">
-                {imagesGenerated} free images generated successfully!
+                Choose ONE image that will be used as your model's locked reference for all future generations. This ensures perfect consistency!
               </p>
+              <div className="reference-notice">
+                <strong>📌 Important:</strong> The image you select will be the foundation for all future images of this model. Pick the one with the clearest face, good lighting, and best captures the model's appearance.
+              </div>
               {generatedPrompt && (
                 <div className="prompt-display">
                   <strong>Generated Prompt:</strong>
